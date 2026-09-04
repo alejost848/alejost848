@@ -68,7 +68,7 @@ export class PortfolioApp extends LitElement {
         max-width: 1100px;
         height: 96px;
         margin: 0 auto;
-        padding: 0 24px;
+        padding: 0 10px;
         display: flex;
         flex-direction: row;
         align-items: center;
