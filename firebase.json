@@ -6,7 +6,7 @@
     "runtime": "nodejs12"
   },
   "hosting": {
-    "public": "build/default",
+    "public": "dist",
     "rewrites": [{
         "source": "/submitForm",
         "function": "handleFormSubmit"

@@ -1,100 +1,74 @@
-<!--
-@license
-Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
-
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="generator" content="Alejandro Sanclemente">
-    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes" />
 
     <title>Alejandro Sanclemente - Motion Designer and PWA Developer</title>
-    <meta name="description" content="Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and development of Progressive Web Apps using Polymer and Firebase.">
+    <meta
+      name="description"
+      content="Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development."
+    />
 
-    <base href="/">
+    <base href="/" />
 
-    <link rel="icon" href="images/favicon.ico">
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="theme-color" content="#191919" />
 
-    <!-- See https://goo.gl/OOhYW5 -->
-    <link rel="manifest" href="manifest.json">
+    <!-- iOS and PWA Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Alejandro Sanclemente" />
 
-    <!-- See https://goo.gl/qRE0vM -->
-    <meta name="theme-color" content="#191919">
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Alejandro Sanclemente" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Alejandro Sanclemente - Motion Designer and PWA Developer" />
+    <meta
+      property="og:description"
+      content="Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development."
+    />
+    <meta property="og:image" content="/images/cover.png" />
 
-    <!-- Add to homescreen for Chrome on Android. Fallback for manifest.json -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Alejandro Sanclemente">
+    <!-- Google Fonts: Roboto -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
 
-    <!-- Add to homescreen for Safari on iOS -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Alejandro Sanclemente">
-
-    <!-- Homescreen icons -->
-    <link rel="apple-touch-icon" href="images/manifest/icon-48x48.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="images/manifest/icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="96x96" href="images/manifest/icon-96x96.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="images/manifest/icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="images/manifest/icon-192x192.png">
-
-    <!-- Tile icon for Windows 8 (144x144 + tile color) -->
-    <meta name="msapplication-TileImage" content="images/manifest/icon-144x144.png">
-    <meta name="msapplication-TileColor" content="#191919">
-    <meta name="msapplication-tap-highlight" content="no">
-
-    <meta property="fb:app_id" content="1644119248953393"/>
-    <meta property="og:site_name" content="Alejandro Sanclemente"/>
-    <meta property="og:type" content="website"/>
-    <meta property="og:image" content="images/cover.png"/>
-
-    <script>
-      window.Polymer = {rootPath: '/'};
-    </script>
-
-    <!-- Load webcomponents-loader.js to check and load any polyfills your browser needs -->
-    <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
-
-    <!-- Load your application shell -->
-    <link rel="import" href="src/portfolio-app.html">
-
-    <!-- Add any global styles for body, document, etc. -->
+    <!-- Global Styles -->
     <style>
+      :root {
+        --app-background-color: #191919;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        font-family: 'Roboto', 'Noto', sans-serif;
+        padding: 0;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         line-height: 1.5;
         min-width: 100%;
         min-height: 100vh;
-        transition: background-color 0.2s cubic-bezier(0.4, 0.0, 1, 1);
-        background-color: #191919;
+        background-color: var(--app-background-color);
+        color: #f4f4f4;
         overflow-x: hidden;
         overflow-y: scroll;
-      }
-      .grecaptcha-badge {
-        box-shadow: none !important;
-      }
-      * {
-  		  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
-    	}
-      @media (max-width: 600px) {
-        .grecaptcha-badge {
-          bottom: 60px !important;
-        }
+        transition: background-color 0.2s cubic-bezier(0.4, 0, 1, 1);
+        -webkit-tap-highlight-color: transparent;
       }
     </style>
   </head>
   <body>
     <portfolio-app></portfolio-app>
+
     <noscript>
       Please enable JavaScript to view this website.
     </noscript>
-    <!-- Built with love using Polymer Starter Kit -->
+
+    <script type="module" src="/src/app.ts"></script>
   </body>
 </html>
