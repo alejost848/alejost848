@@ -66,9 +66,9 @@ export class PortfolioApp extends LitElement {
       .app_toolbar {
         width: 100%;
         max-width: 1100px;
-        height: 80px;
+        height: 96px;
         margin: 0 auto;
-        padding: 0 16px;
+        padding: 0 24px;
         display: flex;
         flex-direction: row;
         align-items: center;

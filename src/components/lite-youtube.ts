@@ -233,40 +233,52 @@ export class LiteYouTube extends LitElement {
 
   private startProgressTracking() {
     this.stopProgressTracking();
-    this.progressTimer = window.setInterval(() => {
-      const iframe = this.renderRoot.querySelector('iframe');
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: 'command', func: 'getCurrentTime' }),
-          '*'
-        );
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: 'command', func: 'getDuration' }),
-          '*'
-        );
-      }
 
-      if (this.player && typeof this.player.getCurrentTime === 'function') {
-        const cur = this.player.getCurrentTime() || 0;
-        const dur = this.player.getDuration() || 0;
-        if (cur > 0 || dur > 0) {
-          this.currentTime = cur;
-          if (dur > 0) this.duration = dur;
-          this.emitProgress(this.currentTime, this.duration);
-          return;
+    let lastTimestamp = 0;
+    // How often to actually query the YT API (every ~250ms is plenty — rAF fills in between)
+    const API_POLL_INTERVAL = 250;
+    let lastApiPoll = 0;
+
+    const tick = (timestamp: number) => {
+      if (!this.isConnected) return;
+
+      const elapsed = timestamp - lastApiPoll;
+
+      // Query the YT player API periodically for ground truth
+      if (elapsed >= API_POLL_INTERVAL) {
+        lastApiPoll = timestamp;
+
+        if (this.player && typeof this.player.getCurrentTime === 'function') {
+          const cur = this.player.getCurrentTime() || 0;
+          const dur = this.player.getDuration() || 0;
+          if (cur > 0 || dur > 0) {
+            this.currentTime = cur;
+            if (dur > 0) this.duration = dur;
+          }
         }
       }
 
+      // Every frame: interpolate currentTime forward based on wall-clock delta
+      // so the bar moves smoothly between API reads
+      if (lastTimestamp > 0 && this.duration > 0) {
+        const delta = (timestamp - lastTimestamp) / 1000; // seconds
+        this.currentTime = Math.min(this.currentTime + delta, this.duration);
+      }
+      lastTimestamp = timestamp;
+
       if (this.duration > 0) {
-        this.currentTime = Math.min(this.currentTime + 0.25, this.duration);
         this.emitProgress(this.currentTime, this.duration);
       }
-    }, 250);
+
+      this.progressTimer = requestAnimationFrame(tick);
+    };
+
+    this.progressTimer = requestAnimationFrame(tick);
   }
 
   private stopProgressTracking() {
     if (this.progressTimer !== null) {
-      clearInterval(this.progressTimer);
+      cancelAnimationFrame(this.progressTimer);
       this.progressTimer = null;
     }
   }
