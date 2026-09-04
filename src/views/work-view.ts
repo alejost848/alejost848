@@ -5,6 +5,7 @@ import { singleViewStyles } from '../styles/single-view-styles.js';
 import { fetchPathOnce } from '../services/firebase.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
 import { renderIcon } from '../components/alejost-icons.js';
+import '../components/alejost-progress.js';
 import '../components/alejost-share.js';
 import '../components/lite-youtube.js';
 
@@ -116,10 +117,18 @@ export class WorkView extends LitElement {
   @property({ type: String }) slug = '';
   @state() private work: any = null;
   @state() private loading = true;
+  @state() private videoCurrentTime = 0;
+  @state() private videoDuration = 100;
 
   connectedCallback() {
     super.connectedCallback();
     this.loadWork();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    metaThemeColor?.setAttribute('content', '#191919');
   }
 
   updated(changedProperties: Map<string, any>) {
@@ -138,7 +147,22 @@ export class WorkView extends LitElement {
     if (data?.title) {
       document.title = `${data.title} - Alejandro Sanclemente`;
     }
+
+    if (data?.mainColor) {
+      this.style.setProperty('--progress-color', data.mainColor);
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      metaThemeColor?.setAttribute('content', data.mainColor);
+    }
   }
+
+  private handleVideoProgress = (e: CustomEvent) => {
+    if (typeof e.detail?.currentTime === 'number') {
+      this.videoCurrentTime = e.detail.currentTime;
+    }
+    if (typeof e.detail?.duration === 'number' && e.detail.duration > 0) {
+      this.videoDuration = e.detail.duration;
+    }
+  };
 
   private toArray(val: any): string[] {
     if (!val) return [];
@@ -150,6 +174,7 @@ export class WorkView extends LitElement {
   render() {
     if (this.loading) {
       return html`
+        <alejost-progress id="loading_progress" indeterminate></alejost-progress>
         <div id="title_header">
           <div>
             <div class="skeleton" style="height: 32px; width: 280px; margin-bottom: 8px;"></div>
@@ -168,6 +193,7 @@ export class WorkView extends LitElement {
         </div>
       `;
     }
+
 
     if (!this.work) {
       return html`
@@ -196,6 +222,12 @@ export class WorkView extends LitElement {
     const galleryImages = this.work.images ? Object.values(this.work.images) : [];
 
     return html`
+      <alejost-progress
+        id="video_progress"
+        .value="${this.videoCurrentTime}"
+        .max="${this.videoDuration}"
+      ></alejost-progress>
+
       <div id="title_header">
         <div>
           <h1>${this.work.title}</h1>
@@ -220,10 +252,13 @@ export class WorkView extends LitElement {
           ${this.work.videoId
             ? html`
                 <lite-youtube
+                  id="video"
                   .videoId="${this.work.videoId}"
                   .videoTitle="${this.work.title}"
+                  @video-progress="${this.handleVideoProgress}"
                 ></lite-youtube>
               `
+
             : html`
                 <img
                   src="${this.work.coverImage?.downloadUrl || this.work.thumbnail || ''}"

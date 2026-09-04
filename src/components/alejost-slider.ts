@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { renderIcon } from './alejost-icons.js';
+import './alejost-progress.js';
 
 interface SlideItem {
   title?: string;
@@ -148,6 +149,21 @@ export class AlejostSlider extends LitElement {
         transform: scale(1.05);
       }
 
+      #slider_progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        pointer-events: none;
+        --progress-height: 4px;
+        --progress-container-color: var(--card-image-bg-color);
+        --progress-active-color: var(--bottom-nav-item-color, var(--app-accent-color));
+        --progress-transition-duration: 0.8s;
+        --progress-transition-timing-function: cubic-bezier(0.65, 0, 0.07, 1);
+        z-index: 4;
+      }
+
       /* Skeleton placeholder */
       .slider-skeleton {
         width: 100%;
@@ -208,6 +224,7 @@ export class AlejostSlider extends LitElement {
   @property({ type: Array }) data: SlideItem[] = [];
   @property({ type: Boolean }) skeleton = false;
   @state() private currentSlide = 0;
+  @state() private progress = 0;
   private timer: number | null = null;
   private touchStartX = 0;
 
@@ -242,8 +259,11 @@ export class AlejostSlider extends LitElement {
     this.stopAutoPlay();
     if (!this.data || this.data.length <= 1) return;
     this.timer = window.setInterval(() => {
-      this.nextSlide();
-    }, 6000);
+      this.progress++;
+      if (this.progress >= 6) {
+        this.nextSlide();
+      }
+    }, 1000);
   }
 
   private stopAutoPlay() {
@@ -255,15 +275,18 @@ export class AlejostSlider extends LitElement {
 
   private nextSlide() {
     if (!this.data || this.data.length === 0) return;
+    this.progress = 0;
     this.currentSlide = (this.currentSlide + 1) % this.data.length;
   }
 
   private prevSlide() {
     if (!this.data || this.data.length === 0) return;
+    this.progress = 0;
     this.currentSlide = (this.currentSlide - 1 + this.data.length) % this.data.length;
   }
 
   private goToSlide(index: number) {
+    this.progress = 0;
     this.currentSlide = index;
     this.startAutoPlay();
   }
@@ -348,6 +371,8 @@ export class AlejostSlider extends LitElement {
             ${renderIcon('chevron-right', 22)}
           </button>
         </div>
+
+        <alejost-progress id="slider_progress" .value="${this.progress}" .max="${6}"></alejost-progress>
       </div>
     `;
   }

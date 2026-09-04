@@ -3,6 +3,7 @@ import { css } from 'lit';
 export const singleViewStyles = css`
   :host {
     display: block;
+    position: relative;
     width: 100%;
     max-width: 1100px;
     margin: 0 auto;
@@ -12,12 +13,26 @@ export const singleViewStyles = css`
   #video_progress {
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
     height: 462px;
-    transition: background-color 0.8s ease;
+    --progress-height: 462px;
+    --progress-container-color: var(--progress-color, #333);
+    --progress-active-color: rgba(0, 0, 0, 0.08);
+    --progress-transition-duration: 0.8s;
+    --progress-transition-timing-function: cubic-bezier(0.65, 0, 0.07, 1);
     background-color: var(--progress-color, #333);
+    transition: background-color 0.8s ease;
     z-index: -1;
+    pointer-events: none;
+  }
+
+  #loading_progress {
+    width: 100%;
+    --progress-height: 4px;
+    --progress-container-color: var(--card-image-bg-color);
+    --progress-active-color: var(--app-accent-color);
   }
 
   #card {
@@ -98,6 +113,7 @@ export const singleViewStyles = css`
     }
     #video_progress {
       height: 200px;
+      --progress-height: 200px;
     }
     #card_content {
       padding: 20px;

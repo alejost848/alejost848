@@ -1,5 +1,36 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+
+let ytApiPromise: Promise<void> | null = null;
+function loadYouTubeApi(): Promise<void> {
+  if (typeof (window as any).YT !== 'undefined' && (window as any).YT.Player) {
+    return Promise.resolve();
+  }
+  if (!ytApiPromise) {
+    ytApiPromise = new Promise((resolve) => {
+      const existing = document.querySelector('script[src*="youtube.com/iframe_api"]');
+      if (existing) {
+        const prev = (window as any).onYouTubeIframeAPIReady;
+        (window as any).onYouTubeIframeAPIReady = () => {
+          if (prev) prev();
+          resolve();
+        };
+        return;
+      }
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+
+      const prev = (window as any).onYouTubeIframeAPIReady;
+      (window as any).onYouTubeIframeAPIReady = () => {
+        if (prev) prev();
+        resolve();
+      };
+    });
+  }
+  return ytApiPromise;
+}
 
 @customElement('lite-youtube')
 export class LiteYouTube extends LitElement {
@@ -74,17 +105,157 @@ export class LiteYouTube extends LitElement {
 
   @property({ type: String }) videoId = '';
   @property({ type: String }) videoTitle = '';
+  @property({ type: Number }) currentTime = 0;
+  @property({ type: Number }) duration = 0;
   @state() private activated = false;
 
-  private activateVideo() {
-    this.activated = true;
+  private player: any = null;
+  private progressTimer: number | null = null;
+  private pendingSeek: number | null = null;
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener('message', this.handleWindowMessage);
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener('message', this.handleWindowMessage);
+    this.stopProgressTracking();
+    if (this.player && typeof this.player.destroy === 'function') {
+      try {
+        this.player.destroy();
+      } catch {}
+      this.player = null;
+    }
+  }
+
+  protected updated(changedProps: PropertyValues) {
+    if (changedProps.has('activated') && this.activated && !this.player) {
+      this.initPlayer();
+    }
+  }
+
+  public activateVideo() {
+    if (!this.activated) {
+      this.activated = true;
+    }
+  }
+
+  public seekTo(seconds: number) {
+    this.pendingSeek = seconds;
+    if (!this.activated) {
+      this.activateVideo();
+      return;
+    }
+
+    if (this.player && typeof this.player.seekTo === 'function') {
+      this.player.seekTo(seconds, true);
+      this.pendingSeek = null;
+    } else {
+      const iframe = this.renderRoot.querySelector('iframe');
+      iframe?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'seekTo', args: [seconds, true] }),
+        '*'
+      );
+    }
+  }
+
+  public pause() {
+    if (this.player && typeof this.player.pauseVideo === 'function') {
+      this.player.pauseVideo();
+    } else {
+      const iframe = this.renderRoot.querySelector('iframe');
+      iframe?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
+        '*'
+      );
+    }
+  }
+
+  private initPlayer() {
+    loadYouTubeApi().then(() => {
+      const iframe = this.renderRoot.querySelector('iframe');
+      if (!iframe) return;
+
+      try {
+        this.player = new (window as any).YT.Player(iframe, {
+          events: {
+            onReady: () => {
+              if (this.pendingSeek !== null) {
+                this.seekTo(this.pendingSeek);
+                this.pendingSeek = null;
+              }
+            },
+            onStateChange: (event: any) => {
+              // 1 = PLAYING, 2 = PAUSED, 0 = ENDED
+              if (event.data === 1) {
+                this.startProgressTracking();
+              } else {
+                this.stopProgressTracking();
+                if (event.data === 0) {
+                  const duration = this.player?.getDuration?.() || this.duration;
+                  this.emitProgress(duration, duration);
+                }
+              }
+            },
+          },
+        });
+      } catch (err) {
+        console.warn('Could not initialize YT.Player, using postMessage fallback:', err);
+      }
+    });
+  }
+
+  private startProgressTracking() {
+    this.stopProgressTracking();
+    this.progressTimer = window.setInterval(() => {
+      if (this.player && typeof this.player.getCurrentTime === 'function') {
+        const cur = this.player.getCurrentTime() || 0;
+        const dur = this.player.getDuration() || 0;
+        this.emitProgress(cur, dur);
+      }
+    }, 250);
+  }
+
+  private stopProgressTracking() {
+    if (this.progressTimer !== null) {
+      clearInterval(this.progressTimer);
+      this.progressTimer = null;
+    }
+  }
+
+  private emitProgress(currentTime: number, duration: number) {
+    this.currentTime = currentTime;
+    this.duration = duration;
+    this.dispatchEvent(
+      new CustomEvent('video-progress', {
+        detail: { currentTime, duration },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  private handleWindowMessage = (event: MessageEvent) => {
+    try {
+      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (data && data.event === 'infoDelivery' && data.info) {
+        const cur = data.info.currentTime;
+        const dur = data.info.duration;
+        if (typeof cur === 'number' && typeof dur === 'number' && dur > 0) {
+          this.emitProgress(cur, dur);
+        }
+      }
+    } catch {}
+  };
 
   render() {
     if (this.activated) {
+      const seekParam = this.pendingSeek ? `&start=${Math.floor(this.pendingSeek)}` : '';
       return html`
         <iframe
-          src="https://www.youtube-nocookie.com/embed/${this.videoId}?autoplay=1&rel=0"
+          src="https://www.youtube-nocookie.com/embed/${this.videoId}?autoplay=1&rel=0&enablejsapi=1${seekParam}"
           title="${this.videoTitle || 'YouTube video'}"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
@@ -109,3 +280,4 @@ export class LiteYouTube extends LitElement {
     `;
   }
 }
+

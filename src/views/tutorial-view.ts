@@ -4,8 +4,62 @@ import { sharedStyles } from '../styles/shared-styles.js';
 import { singleViewStyles } from '../styles/single-view-styles.js';
 import { fetchPathOnce } from '../services/firebase.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
+import '../components/alejost-progress.js';
 import '../components/alejost-share.js';
 import '../components/lite-youtube.js';
+
+function extractDominantColor(imgSrc: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (!imgSrc) return resolve('#333333');
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 16;
+        canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve('#333333');
+        ctx.drawImage(img, 0, 0, 16, 16);
+        const data = ctx.getImageData(0, 0, 16, 16).data;
+        let maxSaturation = 0;
+        let bestColor = '#333333';
+        let r = 0, g = 0, b = 0, count = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const red = data[i], green = data[i + 1], blue = data[i + 2];
+          const brightness = (red + green + blue) / 3;
+          if (brightness < 30 || brightness > 230) continue;
+
+          const max = Math.max(red, green, blue);
+          const min = Math.min(red, green, blue);
+          const saturation = max === 0 ? 0 : (max - min) / max;
+
+          if (saturation > maxSaturation) {
+            maxSaturation = saturation;
+            bestColor = `rgb(${red}, ${green}, ${blue})`;
+          }
+          r += red;
+          g += green;
+          b += blue;
+          count++;
+        }
+
+        if (maxSaturation >= 0.2) {
+          resolve(bestColor);
+        } else if (count > 0) {
+          resolve(`rgb(${Math.round(r / count)}, ${Math.round(g / count)}, ${Math.round(b / count)})`);
+        } else {
+          resolve('#333333');
+        }
+      } catch {
+        resolve('#333333');
+      }
+    };
+    img.onerror = () => resolve('#333333');
+    img.src = imgSrc;
+  });
+}
 
 @customElement('tutorial-view')
 export class TutorialView extends LitElement {
@@ -23,6 +77,25 @@ export class TutorialView extends LitElement {
         text-decoration: underline;
       }
 
+      .timestamp-link {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: var(--app-accent-color);
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-family: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        margin: 0 2px;
+        vertical-align: baseline;
+        transition: background-color 0.2s ease, color 0.2s ease;
+      }
+
+      .timestamp-link:hover {
+        background: var(--app-accent-color);
+        color: white;
+      }
+
       @media (max-width: 600px) {
         #episode_duration {
           display: none;
@@ -36,10 +109,19 @@ export class TutorialView extends LitElement {
 
   @state() private tutorial: any = null;
   @state() private loading = true;
+  @state() private videoCurrentTime = 0;
+  @state() private videoDuration = 100;
+  @state() private mainColor = '#333333';
 
   connectedCallback() {
     super.connectedCallback();
     this.loadTutorial();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    metaThemeColor?.setAttribute('content', '#191919');
   }
 
   updated(changedProperties: Map<string, any>) {
@@ -61,24 +143,82 @@ export class TutorialView extends LitElement {
       if (this.tutorial?.title) {
         document.title = `${this.tutorial.title} - Alejandro Sanclemente`;
       }
+      if (this.tutorial?.mainColor) {
+        this.setMainColor(this.tutorial.mainColor);
+      } else if (this.tutorial?.thumbnail) {
+        extractDominantColor(this.tutorial.thumbnail).then((color) => {
+          this.setMainColor(color);
+        });
+      }
     } else {
       this.tutorial = null;
     }
     this.loading = false;
   }
 
+  private setMainColor(color: string) {
+    this.mainColor = color;
+    this.style.setProperty('--progress-color', color);
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    metaThemeColor?.setAttribute('content', color);
+  }
+
+  private handleVideoProgress = (e: CustomEvent) => {
+    if (typeof e.detail?.currentTime === 'number') {
+      this.videoCurrentTime = e.detail.currentTime;
+    }
+    if (typeof e.detail?.duration === 'number' && e.detail.duration > 0) {
+      this.videoDuration = e.detail.duration;
+    }
+  };
+
+  private parseTimestampToSeconds(ts: string): number {
+    const parts = ts.split(':').map(Number);
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    return 0;
+  }
+
+  private handleDescriptionClick = (e: MouseEvent) => {
+    const target = (e.target as HTMLElement)?.closest('.timestamp-link') as HTMLElement | null;
+    if (target) {
+      e.preventDefault();
+      const timeStr = target.dataset.time;
+      if (timeStr) {
+        const seconds = this.parseTimestampToSeconds(timeStr);
+        const yt = this.renderRoot.querySelector('#video') as any;
+        yt?.seekTo?.(seconds);
+      }
+    }
+  };
+
   private linkify(text: string) {
     if (!text) return '';
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(
+    // First linkify timestamp chapters: e.g. 05:33 or 1:04:13
+    const timestampRegex = /\b(\d{1,2}:\d{2}(?::\d{2})?)\b/g;
+    let formatted = text.replace(
+      timestampRegex,
+      (ts) => `<button type="button" class="timestamp-link" data-time="${ts}">${ts}</button>`
+    );
+
+    // Linkify URLs
+    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    formatted = formatted.replace(
       urlRegex,
       (url) => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`
     );
+
+    return formatted;
   }
 
   render() {
     if (this.loading) {
       return html`
+        <alejost-progress id="loading_progress" indeterminate></alejost-progress>
         <div id="title_header">
           <div>
             <div class="skeleton" style="height: 32px; width: 320px; margin-bottom: 8px;"></div>
@@ -115,6 +255,12 @@ export class TutorialView extends LitElement {
     const linkedDescription = this.linkify(this.tutorial.description || '');
 
     return html`
+      <alejost-progress
+        id="video_progress"
+        .value="${this.videoCurrentTime}"
+        .max="${this.videoDuration}"
+      ></alejost-progress>
+
       <div id="title_header">
         <div>
           <h1>${this.tutorial.title}</h1>
@@ -133,8 +279,10 @@ export class TutorialView extends LitElement {
           ${this.tutorial.videoId
             ? html`
                 <lite-youtube
+                  id="video"
                   .videoId="${this.tutorial.videoId}"
                   .videoTitle="${this.tutorial.title}"
+                  @video-progress="${this.handleVideoProgress}"
                 ></lite-youtube>
               `
             : html`
@@ -155,9 +303,11 @@ export class TutorialView extends LitElement {
             id="description"
             class="description-text"
             .innerHTML="${linkedDescription}"
+            @click="${this.handleDescriptionClick}"
           ></div>
         </div>
       </div>
     `;
   }
 }
+
