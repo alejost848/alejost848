@@ -221,13 +221,45 @@ export class LiteYouTube extends LitElement {
     });
   }
 
+  private handleIframeLoad = () => {
+    const iframe = this.renderRoot.querySelector('iframe');
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: 'listening', id: this.videoId }),
+        '*'
+      );
+    }
+  };
+
   private startProgressTracking() {
     this.stopProgressTracking();
     this.progressTimer = window.setInterval(() => {
+      const iframe = this.renderRoot.querySelector('iframe');
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func: 'getCurrentTime' }),
+          '*'
+        );
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func: 'getDuration' }),
+          '*'
+        );
+      }
+
       if (this.player && typeof this.player.getCurrentTime === 'function') {
         const cur = this.player.getCurrentTime() || 0;
         const dur = this.player.getDuration() || 0;
-        this.emitProgress(cur, dur);
+        if (cur > 0 || dur > 0) {
+          this.currentTime = cur;
+          if (dur > 0) this.duration = dur;
+          this.emitProgress(this.currentTime, this.duration);
+          return;
+        }
+      }
+
+      if (this.duration > 0) {
+        this.currentTime = Math.min(this.currentTime + 0.25, this.duration);
+        this.emitProgress(this.currentTime, this.duration);
       }
     }, 250);
   }
@@ -254,11 +286,34 @@ export class LiteYouTube extends LitElement {
   private handleWindowMessage = (event: MessageEvent) => {
     try {
       const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      if (data && data.event === 'infoDelivery' && data.info) {
-        const cur = data.info.currentTime;
-        const dur = data.info.duration;
-        if (typeof cur === 'number' && typeof dur === 'number' && dur > 0) {
-          this.emitProgress(cur, dur);
+      if (!data) return;
+
+      if (data.event === 'infoDelivery' && data.info) {
+        if (typeof data.info.duration === 'number' && data.info.duration > 0) {
+          this.duration = data.info.duration;
+        }
+        if (typeof data.info.currentTime === 'number') {
+          this.currentTime = data.info.currentTime;
+        }
+        if (typeof data.info.playerState === 'number') {
+          // 1 = PLAYING, 2 = PAUSED, 0 = ENDED
+          if (data.info.playerState === 1) {
+            this.startProgressTracking();
+          } else {
+            this.stopProgressTracking();
+            if (data.info.playerState === 0) {
+              this.currentTime = this.duration;
+            }
+          }
+        }
+        if (this.duration > 0) {
+          this.emitProgress(this.currentTime, this.duration);
+        }
+      } else if (data.event === 'onStateChange') {
+        if (data.info === 1) {
+          this.startProgressTracking();
+        } else {
+          this.stopProgressTracking();
         }
       }
     } catch {}
@@ -268,15 +323,19 @@ export class LiteYouTube extends LitElement {
     if (this.activated) {
       const seekParam = this.pendingSeek ? `&start=${Math.floor(this.pendingSeek)}` : '';
       const autoPlayParam = this.autoload ? '' : '&autoplay=1';
+      const originParam = `&origin=${encodeURIComponent(window.location.origin)}`;
       return html`
         <iframe
-          src="https://www.youtube.com/embed/${this.videoId}?enablejsapi=1&rel=0${autoPlayParam}${seekParam}"
+          id="yt-player"
+          src="https://www.youtube.com/embed/${this.videoId}?enablejsapi=1${originParam}&rel=0${autoPlayParam}${seekParam}"
           title="${this.videoTitle || 'YouTube video'}"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
+          @load="${this.handleIframeLoad}"
         ></iframe>
       `;
     }
+
 
 
     const posterUrl = `https://i.ytimg.com/vi/${this.videoId}/hqdefault.jpg`;

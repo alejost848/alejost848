@@ -161,6 +161,11 @@ export class TutorialView extends LitElement {
     this.style.setProperty('--progress-color', color);
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     metaThemeColor?.setAttribute('content', color);
+    window.dispatchEvent(
+      new CustomEvent('accent-color-changed', {
+        detail: { color },
+      })
+    );
   }
 
   private handleVideoProgress = (e: CustomEvent) => {
@@ -255,12 +260,6 @@ export class TutorialView extends LitElement {
     const linkedDescription = this.linkify(this.tutorial.description || '');
 
     return html`
-      <alejost-progress
-        id="video_progress"
-        .value="${this.videoCurrentTime}"
-        .max="${this.videoDuration}"
-      ></alejost-progress>
-
       <div id="title_header">
         <div>
           <h1>${this.tutorial.title}</h1>

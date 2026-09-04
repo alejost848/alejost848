@@ -5,6 +5,7 @@ import { renderIcon } from './components/alejost-icons.js';
 import { Router, RouteMatch } from './router.js';
 import { initAuth, setUserTheme } from './services/firebase.js';
 
+import './components/alejost-progress.js';
 import './components/alejost-notifications.js';
 import './components/alejost-toast.js';
 
@@ -23,6 +24,7 @@ export class PortfolioApp extends LitElement {
     css`
       :host {
         display: block;
+        position: relative;
         min-height: 100vh;
         background-color: var(--app-background-color);
         color: var(--page-title-color);
@@ -30,10 +32,36 @@ export class PortfolioApp extends LitElement {
           sans-serif;
       }
 
+      #video_progress {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 462px;
+        --progress-height: 462px;
+        --progress-container-color: transparent;
+        --progress-active-color: rgba(0, 0, 0, 0.08);
+        --progress-transition-duration: 0.8s;
+        --progress-transition-timing-function: cubic-bezier(0.65, 0, 0.07, 1);
+        background-color: var(--progress-color, #333333);
+        transition: background-color 0.8s ease;
+        z-index: 0;
+        pointer-events: none;
+      }
+
       #header {
         position: relative;
         width: 100%;
         z-index: 10;
+        background: transparent;
+      }
+
+      #header.single-view-header {
+        --header-color: #ffffff;
+      }
+
+      #header.single-view-header .header_tab.active::after {
+        background-color: #ffffff;
       }
 
       .app_toolbar {
@@ -100,6 +128,8 @@ export class PortfolioApp extends LitElement {
       }
 
       main {
+        position: relative;
+        z-index: 1;
         width: 100%;
         max-width: 1100px;
         margin: 0 auto;
@@ -144,6 +174,10 @@ export class PortfolioApp extends LitElement {
       }
 
       @media (max-width: 600px) {
+        #video_progress {
+          height: 200px;
+          --progress-height: 200px;
+        }
         .header_tabs {
           display: none;
         }
@@ -161,6 +195,13 @@ export class PortfolioApp extends LitElement {
   @state() private params: Record<string, string> = {};
   @state() private theme = 'dark';
   @state() private user: any = null;
+  @state() private videoProgress = 0;
+  @state() private videoDuration = 100;
+  @state() private accentColor = '#333333';
+
+  get isSingleView(): boolean {
+    return this.page === 'work' || this.page === 'tutorial';
+  }
 
   private router!: Router;
 
@@ -190,11 +231,42 @@ export class PortfolioApp extends LitElement {
       }
     }) as EventListener);
 
+    // Listen for YouTube playback progress events
+    window.addEventListener('video-progress', ((e: CustomEvent) => {
+      if (typeof e.detail?.currentTime === 'number') {
+        this.videoProgress = e.detail.currentTime;
+      }
+      if (typeof e.detail?.duration === 'number' && e.detail.duration > 0) {
+        this.videoDuration = e.detail.duration;
+      }
+    }) as EventListener);
+
+    // Listen for project/tutorial accent color changes
+    window.addEventListener('accent-color-changed', ((e: CustomEvent) => {
+      if (e.detail?.color) {
+        this.accentColor = e.detail.color;
+        this.style.setProperty('--progress-color', e.detail.color);
+      }
+    }) as EventListener);
+
     // Initialize client-side router
     this.router = new Router((match: RouteMatch) => {
       this.page = match.page;
       this.params = match.params;
       this.updateTitle();
+
+      // Reset video progress and accent colors when leaving single view
+      if (this.page !== 'work' && this.page !== 'tutorial') {
+        this.videoProgress = 0;
+        this.videoDuration = 100;
+        this.accentColor = '#333333';
+        this.style.removeProperty('--progress-color');
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        metaThemeColor?.setAttribute(
+          'content',
+          this.theme === 'light' ? '#f5f5f5' : '#191919'
+        );
+      }
     });
     this.router.resolveCurrentRoute();
 
@@ -287,11 +359,21 @@ export class PortfolioApp extends LitElement {
 
   render() {
     return html`
-      <div id="header">
+      ${this.isSingleView
+        ? html`
+            <alejost-progress
+              id="video_progress"
+              .value="${this.videoProgress}"
+              .max="${this.videoDuration}"
+            ></alejost-progress>
+          `
+        : ''}
+
+      <div id="header" class="${this.isSingleView ? 'single-view-header' : ''}">
         <div class="app_toolbar">
           <a href="/" id="header_link" title="Navigate home">
             <div id="header_logo">
-              ${renderIcon('logo-color', 36)}
+              ${renderIcon(this.isSingleView ? 'logo' : 'logo-color', 36)}
             </div>
           </a>
           <span class="flex"></span>
@@ -315,7 +397,7 @@ export class PortfolioApp extends LitElement {
               About
             </a>
           </nav>
-          <alejost-notifications .user="${this.user}" .theme="${this.theme}"></alejost-notifications>
+          <alejost-notifications .user="${this.user}" .theme="${this.isSingleView ? 'dark' : this.theme}"></alejost-notifications>
         </div>
       </div>
 

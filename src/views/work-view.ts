@@ -75,7 +75,7 @@ export class WorkView extends LitElement {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background-color: var(--app-accent-color);
+        background-color: var(--progress-color, var(--app-accent-color));
         color: white;
         text-decoration: none;
         padding: 8px 18px;
@@ -84,7 +84,7 @@ export class WorkView extends LitElement {
         text-transform: uppercase;
         font-size: 14px;
         box-shadow: var(--shadow-elevation-2dp);
-        transition: box-shadow 0.2s ease, transform 0.1s ease;
+        transition: background-color 0.8s ease, box-shadow 0.2s ease, transform 0.1s ease;
       }
 
       .action-btn:hover {
@@ -206,11 +206,15 @@ export class WorkView extends LitElement {
       document.title = `${data.title} - Alejandro Sanclemente`;
     }
 
-    if (data?.mainColor) {
-      this.style.setProperty('--progress-color', data.mainColor);
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      metaThemeColor?.setAttribute('content', data.mainColor);
-    }
+    const accent = data?.mainColor || '#333333';
+    this.style.setProperty('--progress-color', accent);
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    metaThemeColor?.setAttribute('content', accent);
+    window.dispatchEvent(
+      new CustomEvent('accent-color-changed', {
+        detail: { color: accent },
+      })
+    );
   }
 
   private handleVideoProgress = (e: CustomEvent) => {
@@ -286,12 +290,6 @@ export class WorkView extends LitElement {
     const galleryImages = this.work.images ? Object.values(this.work.images) : [];
 
     return html`
-      <alejost-progress
-        id="video_progress"
-        .value="${this.videoCurrentTime}"
-        .max="${this.videoDuration}"
-      ></alejost-progress>
-
       <div id="title_header">
         <div>
           <h1>${this.work.title}</h1>
