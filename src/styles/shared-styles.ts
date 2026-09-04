@@ -162,7 +162,7 @@ export const sharedStyles = css`
       rgba(255, 255, 255, 0.04) 63%
     );
     background-size: 400% 100%;
-    animation: shimmer 1.8s ease infinite;
+    animation: shimmer 3s ease infinite;
     border-radius: 4px;
   }
 

@@ -7,12 +7,6 @@ export const singleViewStyles = css`
     width: 100%;
   }
 
-  #loading_progress {
-    width: 100%;
-    --progress-height: 4px;
-    --progress-container-color: var(--card-image-bg-color);
-    --progress-active-color: var(--app-accent-color);
-  }
 
   #card {
     position: relative;

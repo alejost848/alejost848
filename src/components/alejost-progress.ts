@@ -24,11 +24,19 @@ export class AlejostProgress extends LitElement {
       transform-origin: left center;
       transform: scaleX(0);
       will-change: transform;
+      /* Smooth CSS transition — overridden to 'none' when resetting to 0 */
+      transition: transform var(--progress-transition-duration, 0.25s) linear;
+    }
+
+    /* Instant snap when resetting (value === 0) */
+    :host([resetting]) .progress-bar {
+      transition: none;
     }
 
     :host([indeterminate]) .progress-bar {
       width: 50%;
       transform: scaleX(1);
+      transition: none;
       animation: indeterminate-loop 1.6s infinite cubic-bezier(0.65, 0, 0.35, 1);
     }
 
@@ -48,20 +56,25 @@ export class AlejostProgress extends LitElement {
   @property({ type: Number }) value = 0;
   @property({ type: Number }) max = 100;
   @property({ type: Boolean, reflect: true }) indeterminate = false;
+  @property({ type: Boolean, reflect: true }) resetting = false;
+
+  updated(changed: Map<string, unknown>) {
+    if (changed.has('value')) {
+      const wasReset = this.value === 0;
+      // Toggle the resetting attribute so the CSS transition is suppressed on snap-to-zero
+      if (wasReset !== this.resetting) {
+        this.resetting = wasReset;
+      }
+    }
+  }
 
   render() {
     const ratio = this.max > 0 ? Math.min(Math.max(this.value / this.max, 0), 1) : 0;
-    const transitionStyle =
-      this.value === 0
-        ? 'transition: none;'
-        : 'transition: transform var(--progress-transition-duration, 0.8s) var(--progress-transition-timing-function, cubic-bezier(0.65, 0, 0.07, 1));';
-
     return html`
       <div
         class="progress-bar"
-        style="${this.indeterminate ? '' : `transform: scaleX(${ratio}); ${transitionStyle}`}"
+        style="${this.indeterminate ? '' : `transform: scaleX(${ratio});`}"
       ></div>
     `;
   }
 }
-

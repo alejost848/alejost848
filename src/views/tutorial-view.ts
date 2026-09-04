@@ -223,7 +223,7 @@ export class TutorialView extends LitElement {
   render() {
     if (this.loading) {
       return html`
-        <alejost-progress id="loading_progress" indeterminate></alejost-progress>
+
         <div id="title_header">
           <div>
             <div class="skeleton" style="height: 32px; width: 320px; margin-bottom: 8px;"></div>
