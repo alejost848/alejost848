@@ -5,6 +5,7 @@ import { singleViewStyles } from '../styles/single-view-styles.js';
 import { fetchPathOnce } from '../services/firebase.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
 import '../components/alejost-share.js';
+import '../components/lite-youtube.js';
 
 @customElement('tutorial-view')
 export class TutorialView extends LitElement {
@@ -78,8 +79,21 @@ export class TutorialView extends LitElement {
   render() {
     if (this.loading) {
       return html`
+        <div id="title_header">
+          <div>
+            <div class="skeleton" style="height: 32px; width: 320px; margin-bottom: 8px;"></div>
+            <div class="skeleton" style="height: 18px; width: 100px;"></div>
+          </div>
+        </div>
+
         <div id="card">
-          <div id="placeholder_card"></div>
+          <div id="placeholder_card" class="skeleton"></div>
+          <div id="card_content">
+            <div class="skeleton" style="height: 14px; width: 100px; margin-bottom: 12px;"></div>
+            <div class="skeleton" style="height: 16px; width: 95%; margin-bottom: 8px;"></div>
+            <div class="skeleton" style="height: 16px; width: 80%; margin-bottom: 8px;"></div>
+            <div class="skeleton" style="height: 16px; width: 60%;"></div>
+          </div>
         </div>
       `;
     }
@@ -118,12 +132,10 @@ export class TutorialView extends LitElement {
         <div id="placeholder_card">
           ${this.tutorial.videoId
             ? html`
-                <iframe
-                  src="https://www.youtube-nocookie.com/embed/${this.tutorial.videoId}?rel=0"
-                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                  title="${this.tutorial.title}"
-                ></iframe>
+                <lite-youtube
+                  .videoId="${this.tutorial.videoId}"
+                  .videoTitle="${this.tutorial.title}"
+                ></lite-youtube>
               `
             : html`
                 <img

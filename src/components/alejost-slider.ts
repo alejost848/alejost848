@@ -25,6 +25,12 @@ export class AlejostSlider extends LitElement {
         box-shadow: var(--shadow-elevation-2dp);
         background-color: var(--card-image-bg-color);
         transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        outline: none;
+      }
+
+      :host(:focus-visible) {
+        outline: 2px solid var(--app-accent-color);
+        outline-offset: 4px;
       }
 
       :host(:hover) {
@@ -65,7 +71,12 @@ export class AlejostSlider extends LitElement {
       .slide-overlay {
         position: absolute;
         inset: 0;
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.6) 100%);
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.1) 0%,
+          rgba(0, 0, 0, 0) 50%,
+          rgba(0, 0, 0, 0.6) 100%
+        );
         pointer-events: none;
       }
 
@@ -137,6 +148,23 @@ export class AlejostSlider extends LitElement {
         transform: scale(1.05);
       }
 
+      /* Skeleton placeholder */
+      .slider-skeleton {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slider-skeleton-title {
+        position: absolute;
+        bottom: 26px;
+        left: 26px;
+        height: 28px;
+        width: 40%;
+        border-radius: 4px;
+      }
+
       @media (max-width: 780px) {
         :host {
           height: 340px;
@@ -178,22 +206,41 @@ export class AlejostSlider extends LitElement {
   ];
 
   @property({ type: Array }) data: SlideItem[] = [];
+  @property({ type: Boolean }) skeleton = false;
   @state() private currentSlide = 0;
   private timer: number | null = null;
   private touchStartX = 0;
 
   connectedCallback() {
     super.connectedCallback();
+    this.setAttribute('tabindex', '0');
+    this.setAttribute('role', 'region');
+    this.setAttribute('aria-label', 'Featured projects carousel');
+    this.addEventListener('keydown', this.handleKeyDown);
     this.startAutoPlay();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.removeEventListener('keydown', this.handleKeyDown);
     this.stopAutoPlay();
   }
 
+  private handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      this.prevSlide();
+      this.startAutoPlay();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      this.nextSlide();
+      this.startAutoPlay();
+    }
+  };
+
   private startAutoPlay() {
     this.stopAutoPlay();
+    if (!this.data || this.data.length <= 1) return;
     this.timer = window.setInterval(() => {
       this.nextSlide();
     }, 6000);
@@ -236,8 +283,12 @@ export class AlejostSlider extends LitElement {
   }
 
   render() {
-    if (!this.data || this.data.length === 0) {
-      return html`<div class="carousel-container"></div>`;
+    if (this.skeleton || !this.data || this.data.length === 0) {
+      return html`
+        <div class="slider-skeleton skeleton" aria-hidden="true">
+          <div class="slider-skeleton-title skeleton"></div>
+        </div>
+      `;
     }
 
     const items = Object.values(this.data);
@@ -251,11 +302,17 @@ export class AlejostSlider extends LitElement {
         @touchend="${this.onTouchEnd}"
       >
         <div class="slides-track" style="transform: translateX(-${this.currentSlide * 100}%);">
-          ${items.map((slide) => {
+          ${items.map((slide, index) => {
             const path = `/${slide.type || 'work'}/${slide.slug || ''}`;
             return html`
               <a href="${path}" class="slide-item">
-                <img class="slide-image" src="${slide.image}" alt="${slide.title || ''}" />
+                <img
+                  class="slide-image"
+                  src="${slide.image}"
+                  alt="${slide.title || ''}"
+                  loading="${index === 0 ? 'eager' : 'lazy'}"
+                  fetchpriority="${index === 0 ? 'high' : 'auto'}"
+                />
                 <div class="slide-overlay"></div>
                 ${slide.title ? html`<div class="slide-title">${slide.title}</div>` : ''}
               </a>
@@ -276,10 +333,18 @@ export class AlejostSlider extends LitElement {
         </div>
 
         <div class="nav-controls">
-          <button class="nav-button" @click="${() => { this.prevSlide(); this.startAutoPlay(); }}" aria-label="Previous slide">
+          <button
+            class="nav-button"
+            @click="${() => { this.prevSlide(); this.startAutoPlay(); }}"
+            aria-label="Previous slide"
+          >
             ${renderIcon('chevron-left', 22)}
           </button>
-          <button class="nav-button" @click="${() => { this.nextSlide(); this.startAutoPlay(); }}" aria-label="Next slide">
+          <button
+            class="nav-button"
+            @click="${() => { this.nextSlide(); this.startAutoPlay(); }}"
+            aria-label="Next slide"
+          >
             ${renderIcon('chevron-right', 22)}
           </button>
         </div>

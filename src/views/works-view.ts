@@ -70,6 +70,7 @@ export class WorksView extends LitElement {
 
   @state() private works: any[] = [];
   @state() private categories: Record<string, string> = {};
+  @state() private loading = true;
 
   private unsubscribes: Array<() => void> = [];
 
@@ -96,6 +97,7 @@ export class WorksView extends LitElement {
     this.unsubscribes.push(unsubCats);
 
     const unsubWorks = subscribeToPath('/works', (data) => {
+      this.loading = false;
       if (data) {
         const list = Object.entries(data).map(([key, val]: [string, any]) => ({
           ...val,
@@ -144,14 +146,18 @@ export class WorksView extends LitElement {
         : ''}
 
       <div class="works-grid">
-        ${filteredWorks.map(
-          (work) => html`
-            <alejost-card
-              href="/work/${work.slug || work.key}"
-              .data="${work}"
-            ></alejost-card>
-          `
-        )}
+        ${this.loading
+          ? Array.from({ length: 8 }).map(
+              () => html`<alejost-card ?skeleton="${true}"></alejost-card>`
+            )
+          : filteredWorks.map(
+              (work) => html`
+                <alejost-card
+                  href="/work/${work.slug || work.key}"
+                  .data="${work}"
+                ></alejost-card>
+              `
+            )}
       </div>
     `;
   }

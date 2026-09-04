@@ -60,6 +60,13 @@
         transition: background-color 0.2s cubic-bezier(0.4, 0, 1, 1);
         -webkit-tap-highlight-color: transparent;
       }
+
+      /* View Transitions */
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 250ms;
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      }
     </style>
   </head>
   <body>

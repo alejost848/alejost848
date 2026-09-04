@@ -6,6 +6,7 @@ import { fetchPathOnce } from '../services/firebase.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
 import { renderIcon } from '../components/alejost-icons.js';
 import '../components/alejost-share.js';
+import '../components/lite-youtube.js';
 
 @customElement('work-view')
 export class WorkView extends LitElement {
@@ -149,8 +150,21 @@ export class WorkView extends LitElement {
   render() {
     if (this.loading) {
       return html`
+        <div id="title_header">
+          <div>
+            <div class="skeleton" style="height: 32px; width: 280px; margin-bottom: 8px;"></div>
+            <div class="skeleton" style="height: 24px; width: 140px; border-radius: 12px;"></div>
+          </div>
+        </div>
+
         <div id="card">
-          <div id="placeholder_card"></div>
+          <div id="placeholder_card" class="skeleton"></div>
+          <div id="card_content">
+            <div class="skeleton" style="height: 14px; width: 120px; margin-bottom: 12px;"></div>
+            <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px;"></div>
+            <div class="skeleton" style="height: 16px; width: 75%; margin-bottom: 8px;"></div>
+            <div class="skeleton" style="height: 16px; width: 50%;"></div>
+          </div>
         </div>
       `;
     }
@@ -205,12 +219,10 @@ export class WorkView extends LitElement {
         <div id="placeholder_card">
           ${this.work.videoId
             ? html`
-                <iframe
-                  src="https://www.youtube-nocookie.com/embed/${this.work.videoId}?rel=0"
-                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                  title="${this.work.title}"
-                ></iframe>
+                <lite-youtube
+                  .videoId="${this.work.videoId}"
+                  .videoTitle="${this.work.title}"
+                ></lite-youtube>
               `
             : html`
                 <img

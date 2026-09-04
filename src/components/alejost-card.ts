@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 
 export function formatTimeAgo(publishedDate: string | number | undefined): string {
@@ -39,7 +39,7 @@ export class AlejostCard extends LitElement {
         transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease;
       }
 
-      :host(:hover) {
+      :host(:hover:not([skeleton])) {
         box-shadow: var(--shadow-elevation-4dp);
         transform: translateY(-2px);
       }
@@ -65,7 +65,12 @@ export class AlejostCard extends LitElement {
         height: 100%;
         object-fit: cover;
         display: block;
-        transition: opacity 0.3s ease;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+
+      .card-image.loaded {
+        opacity: 1;
       }
 
       .card-content {
@@ -105,6 +110,36 @@ export class AlejostCard extends LitElement {
         font-size: 12px;
         margin-top: 12px;
         color: var(--card-date-color);
+      }
+
+      /* Skeleton bars */
+      .skeleton-bar {
+        height: 14px;
+        margin-bottom: 8px;
+        border-radius: 4px;
+      }
+
+      .skeleton-title {
+        height: 18px;
+        width: 80%;
+        margin-bottom: 12px;
+      }
+
+      .skeleton-desc-1 {
+        height: 12px;
+        width: 95%;
+        margin-bottom: 6px;
+      }
+
+      .skeleton-desc-2 {
+        height: 12px;
+        width: 65%;
+      }
+
+      .skeleton-date {
+        height: 10px;
+        width: 35%;
+        margin-top: 14px;
       }
 
       @media (max-width: 960px) {
@@ -167,9 +202,24 @@ export class AlejostCard extends LitElement {
 
   @property({ type: String }) href = '';
   @property({ type: Object }) data: any = null;
+  @property({ type: Boolean, reflect: true }) skeleton = false;
+  @state() private imageLoaded = false;
 
   render() {
-    if (!this.data) return html``;
+    if (this.skeleton || !this.data) {
+      return html`
+        <div class="card-link" aria-hidden="true">
+          <div class="image-container skeleton"></div>
+          <div class="card-content">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-desc-1"></div>
+            <div class="skeleton skeleton-desc-2"></div>
+            <div class="spacer"></div>
+            <div class="skeleton skeleton-date"></div>
+          </div>
+        </div>
+      `;
+    }
 
     const thumbnail = this.data.thumbnail || this.data.cover || '';
     const title = this.data.title || '';
@@ -180,7 +230,15 @@ export class AlejostCard extends LitElement {
       <a href="${this.href}" class="card-link">
         <div class="image-container">
           ${thumbnail
-            ? html`<img class="card-image" src="${thumbnail}" alt="${title}" loading="lazy" />`
+            ? html`
+                <img
+                  class="card-image ${this.imageLoaded ? 'loaded' : ''}"
+                  src="${thumbnail}"
+                  alt="${title}"
+                  loading="lazy"
+                  @load="${() => (this.imageLoaded = true)}"
+                />
+              `
             : html`<div style="width:100%;height:100%;background-color:var(--card-image-bg-color)"></div>`}
         </div>
         <div class="card-content">

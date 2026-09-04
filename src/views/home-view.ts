@@ -21,6 +21,9 @@ export class HomeView extends LitElement {
   @state() private slider: any[] = [];
   @state() private works: any[] = [];
   @state() private tutorials: any[] = [];
+  @state() private loadingSlider = true;
+  @state() private loadingWorks = true;
+  @state() private loadingTutorials = true;
 
   private unsubscribes: Array<() => void> = [];
 
@@ -38,6 +41,7 @@ export class HomeView extends LitElement {
   private subscribeData() {
     // 1. Slider
     const unsubSlider = subscribeToPath('/home/slider', (data) => {
+      this.loadingSlider = false;
       if (data) {
         this.slider = Array.isArray(data) ? data : Object.values(data);
       }
@@ -48,6 +52,7 @@ export class HomeView extends LitElement {
     const unsubWorks = subscribeToPath(
       '/works',
       (data) => {
+        this.loadingWorks = false;
         if (data) {
           const list = Object.entries(data).map(([key, val]: [string, any]) => ({
             ...val,
@@ -65,6 +70,7 @@ export class HomeView extends LitElement {
     const unsubTutorials = subscribeToPath(
       '/home/latestTutorials',
       (data) => {
+        this.loadingTutorials = false;
         if (data) {
           const list = Object.entries(data).map(([key, val]: [string, any]) => ({
             ...val,
@@ -81,30 +87,44 @@ export class HomeView extends LitElement {
 
   render() {
     return html`
-      ${this.slider && this.slider.length > 0
-        ? html`<alejost-slider .data="${this.slider}"></alejost-slider>`
-        : ''}
+      ${this.loadingSlider
+        ? html`<alejost-slider ?skeleton="${true}"></alejost-slider>`
+        : html`<alejost-slider .data="${this.slider}"></alejost-slider>`}
 
       <alejost-module moduleTitle="Latest works" moduleHref="/works">
-        ${this.works.map(
-          (work) => html`
-            <alejost-card
-              href="/work/${work.slug || work.key}"
-              .data="${work}"
-            ></alejost-card>
-          `
-        )}
+        ${this.loadingWorks
+          ? html`
+              <alejost-card ?skeleton="${true}"></alejost-card>
+              <alejost-card ?skeleton="${true}"></alejost-card>
+              <alejost-card ?skeleton="${true}"></alejost-card>
+              <alejost-card ?skeleton="${true}"></alejost-card>
+            `
+          : this.works.map(
+              (work) => html`
+                <alejost-card
+                  href="/work/${work.slug || work.key}"
+                  .data="${work}"
+                ></alejost-card>
+              `
+            )}
       </alejost-module>
 
       <alejost-module moduleTitle="Latest tutorials" moduleHref="/tutorials">
-        ${this.tutorials.map(
-          (tutorial) => html`
-            <alejost-card
-              href="/tutorial/${tutorial.seriesSlug || 'general'}/${tutorial.slug || tutorial.key}"
-              .data="${tutorial}"
-            ></alejost-card>
-          `
-        )}
+        ${this.loadingTutorials
+          ? html`
+              <alejost-card ?skeleton="${true}"></alejost-card>
+              <alejost-card ?skeleton="${true}"></alejost-card>
+              <alejost-card ?skeleton="${true}"></alejost-card>
+              <alejost-card ?skeleton="${true}"></alejost-card>
+            `
+          : this.tutorials.map(
+              (tutorial) => html`
+                <alejost-card
+                  href="/tutorial/${tutorial.seriesSlug || 'general'}/${tutorial.slug || tutorial.key}"
+                  .data="${tutorial}"
+                ></alejost-card>
+              `
+            )}
       </alejost-module>
     `;
   }

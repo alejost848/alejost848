@@ -167,9 +167,21 @@ export class PortfolioApp extends LitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    // Check stored theme
-    const savedTheme = localStorage.getItem('alejo_theme') || 'dark';
-    this.applyTheme(savedTheme);
+    // Check stored theme or detect OS preference
+    const savedTheme = localStorage.getItem('alejo_theme');
+    if (savedTheme) {
+      this.applyTheme(savedTheme);
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      this.applyTheme(prefersDark ? 'dark' : 'light');
+    }
+
+    // Live OS theme listener
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('alejo_theme')) {
+        this.applyTheme(e.matches ? 'dark' : 'light');
+      }
+    });
 
     // Listen for theme toggle events
     this.addEventListener('theme-changed', ((e: CustomEvent) => {

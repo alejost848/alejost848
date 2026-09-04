@@ -42,6 +42,12 @@ export const sharedStyles = css`
     box-sizing: border-box;
   }
 
+  /* Accessible focus ring */
+  :focus-visible {
+    outline: 2px solid var(--app-accent-color);
+    outline-offset: 2px;
+  }
+
   .link {
     color: inherit;
     text-decoration: none;
@@ -70,7 +76,7 @@ export const sharedStyles = css`
     font-weight: 400;
   }
 
-  /* Flex utilities replacing Polymer iron-flex-layout */
+  /* Flex utilities */
   .layout-horizontal {
     display: flex;
     flex-direction: row;
@@ -136,6 +142,28 @@ export const sharedStyles = css`
     color: #888;
     cursor: not-allowed;
     box-shadow: none;
+  }
+
+  /* Skeleton Shimmer System */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 25%,
+      rgba(255, 255, 255, 0.1) 37%,
+      rgba(255, 255, 255, 0.04) 63%
+    );
+    background-size: 400% 100%;
+    animation: shimmer 1.8s ease infinite;
+    border-radius: 4px;
   }
 
   @media (max-width: 600px) {
