@@ -1,0 +1,352 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
+
+<link rel="import" href="../bower_components/google-recaptcha/google-recaptcha.html">
+
+<script async src="../bower_components/moment/min/moment.min.js"></script>
+
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="about-view">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+      .cards_container{
+        width: 100%;
+        @apply --layout-horizontal;
+        @apply --layout-justified;
+      }
+      .card_group{
+        width: calc(50% - 10px);
+        box-sizing: border-box;
+      }
+      .card{
+        border-radius: 4px;
+        padding: 30px;
+        box-sizing: border-box;
+        background-color: var(--card-bg-color);
+        overflow: hidden;
+        @apply --alejost-elevation-2dp;
+        margin: 10px 0;
+        width: 100%;
+      }
+      #contact_card{
+        width: 100%;
+        flex: auto;
+      }
+      iron-form{
+        width: 100%;
+      }
+      #contact_buttons{
+        width: 100%;
+        margin-top: 24px;
+      }
+      paper-input, paper-textarea{
+        --paper-input-container-focus-color: var(--app-accent-color);
+        --paper-input-container-input-color: var(--page-title-color);
+        --paper-input-container-underline:{
+          border: 1px #555 solid;
+          opacity: 0.2;
+        }
+      }
+      #message_input{
+        --paper-input-container-input:{
+          max-height: 120px;
+          box-shadow: none;
+        }
+      }
+      paper-button[disabled]{
+        background-color: #ccc;
+      }
+      #sending_label{
+        margin-left: 8px;
+        color: #888;
+      }
+      .flat_button{
+        margin-top: 24px;
+        padding: 0;
+        color: var(--app-accent-color);
+      }
+      h1{
+        margin-bottom: 38px;
+      }
+      h2{
+        margin-bottom: 12px;
+      }
+
+      paper-spinner-lite{
+        --paper-spinner-color: #888;
+        width: 20px;
+        height: 20px;
+      }
+
+      .text{
+        color: var(--card-description-color);
+      }
+
+      #credits{
+        max-height: 84px;
+      }
+
+      paper-icon-button{
+        color: var(--header-color);
+        --paper-icon-button-ink-color: var(--header-color);
+      }
+
+      @media (max-width: 900px) {
+        .cards_container{
+          @apply --layout-vertical;
+        }
+        .card_group{
+          width: 100%;
+        }
+      }
+      @media (max-width: 600px) {
+        .card{
+          padding: 20px;
+        }
+        p{
+          font-size: 14px;
+          line-height: 20px;
+        }
+        .text{
+          font-size: 14px;
+          text-align: center;
+        }
+        #credits{
+          @apply --layout-vertical;
+          @apply --layout-center;
+          padding: 10px;
+        }
+        #credits .text{
+          display: none;
+        }
+      }
+    </style>
+
+    <h1>About</h1>
+
+    <div class="cards_container">
+      <div class="card_group layout vertical">
+        <div class="card layout vertical start">
+          <h2>alejo.st</h2>
+          <p>
+            This website is a Progressive Web App built with Polymer.
+            Database, authentication, hosting and cloud messaging is provided by Firebase with some automation provided by Zapier.
+          </p>
+          <span class="flex"></span>
+          <a class="link" href="https://medium.com/@alejost848/building-my-portfolio-website-part-1-e72a39bb7b2f" target="_blank" rel="noopener">
+            <paper-button noink class="flat_button">Read more</paper-button>
+          </a>
+        </div>
+        <div class="card layout vertical start">
+          <h2>Alejandro Sanclemente</h2>
+          <p>
+            I'm an Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and development of Progressive Web Apps using Polymer and Firebase.
+            <br>
+            <br>
+            Other topics of my interest are branding, the future of the web platform and space-related stuff.
+            <br>
+            <br>
+            I’m available for hiring. Contact me for more information.
+          </p>
+          <a class="link" href="https://docs.google.com/document/d/1AE2Rjhj611kTnwHVvazgWS0EKrr2yZHRErkT3sXqsd8/edit?usp=sharing" target="_blank" rel="noopener">
+            <paper-button noink class="flat_button">See resume</paper-button>
+          </a>
+        </div>
+      </div>
+      <div class="card_group layout vertical">
+        <div id="contact_card" class="card layout vertical start">
+          <h2>Contact</h2>
+          <p>
+            Need more information or a quote?
+            <br>
+            <br>
+            Fill in the form below:
+            <br>
+          </p>
+          <iron-form id="form" on-iron-form-response="_recaptchaResponded">
+            <form method="post" action="/submitForm">
+              <paper-input id="name_input" label="Name (optional)" name="name"></paper-input>
+              <paper-input id="email_input" label="Email" name="email" type="email" required error-message="Enter a valid email address"></paper-input>
+              <paper-input id="subject_input" label="Subject" name="subject" required error-message="Subject can't be empty"></paper-input>
+              <paper-textarea id="message_input" name="message" label="Message" rows="5" required error-message="Message can't be empty"></paper-textarea>
+              <input name="recaptcha_token" value="[[token]]" hidden>
+            </form>
+          </iron-form>
+          <span class="flex"></span>
+          <div id="contact_buttons" class="layout horizontal center">
+            <google-recaptcha
+              id="recaptcha"
+              invisible
+              dark
+              lang="en"
+              value="{{token}}"
+              sitekey="6Lf6xzsUAAAAALEVsKzzO2rDcFyZgw3OomkmuAJ1"
+              hidden="[[hideRecaptcha]]"
+              on-google-recaptcha-response="_submitForm">
+            </google-recaptcha>
+            <paper-button raised on-tap="sendEmail" disabled="[[sendingForm]]">
+              <paper-spinner-lite active alt="Validating form" hidden="[[!sendingForm]]"></paper-spinner-lite>
+              <span id="sending_label" hidden="[[!sendingForm]]">Sending</span>
+              <span hidden="[[sendingForm]]">Send</span>
+            </paper-button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards_container">
+      <div class="card_group">
+        <div class="card layout horizontal">
+          <div class="text">Dark theme</div>
+          <span class="flex"></span>
+          <paper-toggle-button id="theme_toggle" on-tap="toggleTheme" checked="[[themeToggle]]"></paper-toggle-button>
+        </div>
+      </div>
+      <div class="card_group">
+        <div id="credits" class="card layout horizontal center">
+          <div class="text">©[[actualYear]] Alejandro Sanclemente</div>
+          <span class="flex"></span>
+          <div class="layout horizontal center">
+            <a href="https://youtube.com/alejost848" target="_blank" rel="noopener" class="link">
+              <paper-icon-button icon="alejost-icons:youtube" aria-label="YouTube"></paper-icon-button>
+            </a>
+            <a href="https://github.com/alejost848" target="_blank" rel="noopener" class="link">
+              <paper-icon-button icon="alejost-icons:github" aria-label="GitHub"></paper-icon-button>
+            </a>
+            <a href="https://twitter.com/alejost848" target="_blank" rel="noopener" class="link">
+              <paper-icon-button icon="alejost-icons:twitter" aria-label="Twitter"></paper-icon-button>
+            </a>
+            <a href="https://dribbble.com/alejost848" target="_blank" rel="noopener" class="link">
+              <paper-icon-button icon="alejost-icons:dribbble" aria-label="Dribbble"></paper-icon-button>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </template>
+
+  <script>
+    class AboutView extends Polymer.mixinBehaviors([Polymer.IronResizableBehavior], Polymer.Element) {
+      static get is() { return 'about-view'; }
+
+      static get properties() {
+        return {
+          active: {
+            type: Boolean,
+            observer: '_activeChanged'
+          },
+          sendingForm: {
+            type: Boolean,
+            value: false
+          },
+          theme: {
+            type: String,
+            reflectToAttribute: true,
+            notify: true
+          },
+          themeToggle: Boolean
+        };
+      }
+
+      ready(){
+        super.ready();
+        this.actualYear = moment().year();
+      }
+
+      sendEmail(){
+        if (!this.$.form.validate()) {
+          return;
+        } else {
+          this.$.recaptcha.execute();
+        }
+      }
+
+      _submitForm(){
+        this.$.form.submit();
+        this.sendingForm = true;
+      }
+
+      _recaptchaResponded(e){
+        this.sendingForm = false;
+        let response = e.detail.response.message;
+        let error = e.detail.response.error;
+        if (response == "valid-token") {
+          //Reset inputs
+          //FIXME: I had to edit iron-autogrow-textarea to clear the value and make the label float
+          //Waiting for this issue to be resolved at https://github.com/PolymerElements/paper-input/issues/508
+
+          this.$.name_input.value = "";
+          this.$.email_input.value = "";
+          this.$.subject_input.value = "";
+          this.$.message_input.value = "";
+
+          this.$.recaptcha.reset();
+          this.openToast("Message sent", 3000);
+        } else if (response == "wrong-token") {
+          this.openToast("Recaptcha verification failed. Are you a robot?", 4000);
+        } else if (response == "error") {
+          this.openToast("Recaptcha: " + error, 3000);
+        }
+      }
+
+      _activeChanged(active) {
+        if (active) {
+          this.hideRecaptcha = false;
+        } else {
+          this.hideRecaptcha = true;
+        }
+      }
+
+      openToast(text, duration){
+        window.dispatchEvent(new CustomEvent('show-toast', {
+          detail: {
+            text: text,
+            duration: duration
+          },
+          bubbles: true,
+          composed: true
+        }));
+      }
+
+      toggleTheme(e){
+        this.theme = (e.target.checked) ? "dark" : "light";
+
+        this.dispatchEvent(new CustomEvent('track-event', {
+          composed: true,
+          bubbles: true,
+          detail: {
+            category: 'interactions',
+            action: 'change_theme',
+            label: this.theme
+          }
+        }));
+      }
+    }
+
+    window.customElements.define(AboutView.is, AboutView);
+  </script>
+</dom-module>

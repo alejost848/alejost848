@@ -1,0 +1,35 @@
+{
+  "rules": {
+    ".read": "auth.uid === 'd9JhyoWr4LWRviqzQG7Sdzm0PZo2'",
+    ".write": "auth.uid === 'd9JhyoWr4LWRviqzQG7Sdzm0PZo2'",
+    "dashboard": {
+      "autocompleteSuggestions": {
+        ".read": true
+      }
+    },
+    "home": {
+      ".read": true,
+      "latestTutorials": {
+        ".indexOn": "publishedDate"
+      }
+    },
+    "tutorials": {
+      ".read": true,
+      "$sid": {
+        "videos": {
+          ".indexOn": ["publishedDate", "slug"]
+        }
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "works": {
+      ".read": true,
+      ".indexOn": ["publishedDate"]
+    }
+  }
+}

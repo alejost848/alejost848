@@ -1,0 +1,27 @@
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "functions": {
+    "runtime": "nodejs12"
+  },
+  "hosting": {
+    "public": "build/default",
+    "rewrites": [{
+        "source": "/submitForm",
+        "function": "handleFormSubmit"
+      },
+      {
+        "source": "**/!(*.*)",
+        "function": "host"
+      }
+    ],
+    "headers": [{
+      "source": "**/*.@(jpg|jpeg|gif|png)",
+      "headers": [{
+        "key": "Cache-Control",
+        "value": "max-age=86400"
+      }]
+    }]
+  }
+}

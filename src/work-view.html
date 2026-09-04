@@ -1,0 +1,425 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+
+<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+
+<link rel="import" href="../bower_components/google-youtube/google-youtube.html">
+<link rel="import" href="../bower_components/photo-gallery/photo-gallery.html">
+
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+
+<link rel="import" href="elements/alejost-share.html">
+
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="single-view-shared-styles.html">
+
+<script async src="../bower_components/moment/min/moment.min.js"></script>
+
+<dom-module id="work-view">
+  <template>
+    <style include="shared-styles"></style>
+    <style include="single-view-shared-styles">
+      #placeholder_card iron-image{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--card-image-bg-color);
+      }
+      #offline_work{
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+      }
+      #offline_work iron-icon{
+        color: rgba(255, 255, 255, 0.5);
+        width: 48px;
+        height: 48px;
+      }
+      #information{
+        @apply --layout-horizontal;
+        margin-bottom: 24px;
+      }
+      .info_group:nth-child(2){
+        padding: 0px 30px;
+      }
+      .info_item{
+        margin-bottom: 12px;
+      }
+      .info_item_title{
+        color: var(--card-date-color);
+        margin-bottom: 4px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      #categories_container{
+        margin-top: 6px;
+      }
+      .info_chip{
+        background-color: var(--chip-background-color);
+        color: var(--chip-color);
+        height: 32px;
+        line-height: 32px;
+        font-weight: 500;
+        font-size: 13px;
+        border-radius: 30px;
+        padding: 0 16px;
+        box-sizing: border-box;
+        margin: 2px;
+        cursor: default;
+        white-space: nowrap;
+        @apply --layout-vertical;
+        @apply --layout-center-center;
+      }
+      .category_chip{
+        background-color: rgba(0, 0, 0, 0.05);
+        color: white;
+        cursor: pointer;
+      }
+      #action_link{
+        line-height: 0;
+        margin-top: 20px;
+      }
+      #action_button{
+        background-color: var(--progress-color, #333);
+        transition: background-color 0.8s ease;
+      }
+      #action_button iron-icon{
+        width: 20px;
+        height: 20px;
+        margin-left: 6px;
+        margin-bottom: 2px;
+      }
+
+      photo-gallery .item{
+        background-color: var(--card-image-bg-color);
+      }
+      .multimedia_group{
+        margin-top: 36px;
+      }
+      .multimedia_title{
+        margin-bottom: 16px;
+      }
+      .video_item{
+        width: calc(50% - 4px);
+        margin-bottom: 8px;
+      }
+
+      @media (max-width: 600px) {
+        #information{
+          @apply --layout-vertical;
+        }
+        .info_group:nth-child(2){
+          padding: 10px 0;
+        }
+      }
+    </style>
+
+    <app-location route="{{route}}" url-space-regex="^[[rootPath]]"></app-location>
+    <app-route route="{{route}}" pattern="/work/:slug" data="{{routeData}}"></app-route>
+
+    <firebase-document
+      app-name="alejost848"
+      path="/works/[[routeData.slug]]"
+      data="{{work}}"
+      online="{{online}}">
+    </firebase-document>
+
+    <paper-progress id="video_progress" class="transiting" value="{{videoCurrentTime}}" max="{{videoDuration}}"></paper-progress>
+
+    <div id="title_header" class="layout horizontal center">
+      <template is="dom-if" if="[[dataLoaded]]">
+        <div>
+          <h1>[[work.title]]</h1>
+          <div id="categories_container" class="layout horizontal">
+            <template is="dom-repeat" items="[[_computeCategories(work.categories)]]" as="category">
+              <a href="[[rootPath]]works/[[category.key]]" class="link">
+                <div class="info_chip category_chip">[[category.value]]</div>
+              </a>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+    <div id="card">
+      <template is="dom-if" if="[[!online]]">
+        <div id="placeholder_card">
+          <div id="offline_work" class="layout vertical center-center">
+            <iron-icon icon="alejost-icons:cloud-off"></iron-icon>
+          </div>
+        </div>
+      </template>
+
+      <template is="dom-if" if="[[online]]" restamp="true">
+        <template is="dom-if" if="[[!dataLoaded]]">
+          <div id="placeholder_card"></div>
+          <paper-progress id="loading_progress" indeterminate></paper-progress>
+        </template>
+
+        <template is="dom-if" if="[[dataLoaded]]" restamp="true">
+          <template is="dom-if" if="[[work.videoId]]" restamp="true">
+            <template is="dom-if" if="[[active]]" restamp="true">
+              <google-youtube
+                id="video"
+                fluid
+                video-id="[[work.videoId]]"
+                showinfo="0"
+                currenttime="{{videoCurrentTime}}"
+                duration="{{videoDuration}}"
+                rel="0">
+              </google-youtube>
+            </template>
+          </template>
+
+          <template is="dom-if" if="[[!work.videoId]]">
+            <div id="placeholder_card">
+              <iron-image src="[[work.coverImage.downloadUrl]]" preload fade sizing="cover" alt="Cover image for [[work.title]]"></iron-image>
+            </div>
+          </template>
+        </template>
+      </template>
+
+      <template is="dom-if" if="[[dataLoaded]]">
+        <div id="card_content">
+
+          <alejost-share toast-open="[[toastOpen]]" share-url="[[shareUrl]]"></alejost-share>
+
+          <div id="information">
+            <div class="info_group info_item flex-4 layout vertical start">
+              <div id="publishedDate" title="[[_computeFullTimeAgo(work.publishedDate)]]">[[_computeTimeAgo(work.publishedDate)]]</div>
+              <div id="description">[[work.shortDescription]]</div>
+              <span class="flex"></span>
+              <a id="action_link" href="[[work.button.url]]" target="_blank" class="link" rel="noopener" hidden="[[!work.button]]">
+                <paper-button raised id="action_button">
+                  [[work.button.text]]
+                  <iron-icon icon="alejost-icons:open-in-new"></iron-icon>
+                </paper-button>
+              </a>
+            </div>
+            <div class="info_group flex-3">
+              <div class="info_item">
+                <div class="info_item_title">Client</div>
+                <div class="layout horizontal wrap">
+                  <template is="dom-repeat" items="[[_computeItems(work.clients)]]" as="client">
+                    <div class="info_chip">[[client]]</div>
+                  </template>
+                </div>
+              </div>
+              <div class="info_item">
+                <div class="info_item_title">Tools used</div>
+                <div class="layout horizontal wrap">
+                  <template is="dom-repeat" items="[[_computeItems(work.toolsUsed)]]" as="tool">
+                    <div class="info_chip">[[tool]]</div>
+                  </template>
+                </div>
+              </div>
+            </div>
+            <div class="info_group flex-3">
+              <div class="info_item">
+                <div class="info_item_title">Credits</div>
+                <div class="layout horizontal wrap">
+                  <template is="dom-repeat" items="[[_computeItems(work.credits)]]" as="person">
+                    <div class="info_chip">[[person]]</div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <template is="dom-if" if="[[work.images]]">
+            <div class="multimedia_group">
+              <div class="multimedia_title info_item_title">Images</div>
+              <photo-gallery height="280">
+                <template is="dom-repeat" items="[[work.images]]" as="image">
+                  <div class="item" data-url$="[[image.downloadUrl]]&aspect-ratio=[[_generateAspectRatio()]]" title="Image [[index]] for [[work.title]]"></div>
+                </template>
+              </photo-gallery>
+            </div>
+          </template>
+
+          <template is="dom-if" if="[[work.videos]]">
+            <template is="dom-if" if="[[active]]" restamp="true">
+              <div class="multimedia_group">
+                <div class="multimedia_title info_item_title">Videos</div>
+                <div class="layout horizontal wrap justified">
+                  <template is="dom-repeat" items="[[work.videos]]" as="video">
+                    <google-youtube
+                      class="video_item"
+                      fluid
+                      video-id="[[video]]"
+                      showinfo="0"
+                      rel="0">
+                    </google-youtube>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </template>
+
+        </div>
+
+      </template>
+    </div>
+
+  </template>
+
+  <script>
+    class WorkView extends Polymer.Element {
+      static get is() { return 'work-view'; }
+
+      static get properties() {
+        return {
+          active: {
+            type: Boolean,
+            observer: '_activeChanged',
+          },
+          work: {
+            type: Object,
+            observer: '_workChanged'
+          },
+          toastOpen: {
+            type: Boolean,
+            observer: '_toastOpened'
+          }
+        };
+      }
+
+      _workChanged(data){
+        this.dataLoaded = false;
+
+        //Check if the data is not empty
+        if (Object.keys(data).length !== 0 && data.constructor === Object) {
+          this._setMainColor();
+          this._updateMetadata();
+
+          // HACK: Wait a ms to set the dataLoaded to true and trigger the video restamp
+          setTimeout(() => {
+            this.dataLoaded = true;
+          },1);
+        }
+      }
+
+      stopPlayback() {
+        if (this.online && this.work.videoId && this.shadowRoot.querySelector('#video')) {
+          this.shadowRoot.querySelector('#video').pause();
+        }
+      }
+
+      _activeChanged(active) {
+        if (!active) {
+          this.stopPlayback();
+
+          //Change browser theme color
+          let metaThemeColor = document.querySelector('meta[name=theme-color]');
+
+          //Get a CSS property depending on whether the shady CSS polyfill is loaded:
+          let bgColor;
+          if (ShadyCSS) {
+            bgColor = ShadyCSS.getComputedStyleValue(this, '--app-background-color');
+          } else {
+            bgColor = getComputedStyle(this).getPropertyValue('--app-background-color');
+          }
+          metaThemeColor.setAttribute("content", bgColor);
+
+          //Change background color for the tutorial-view
+          this.updateStyles({
+            '--progress-color': '#333'
+          });
+        } else if (active && this.dataLoaded) {
+          setTimeout(() => {
+            this._updateMetadata();
+            this._setMainColor();
+          }, 10);
+        }
+        this.shareUrl = window.location.href;
+      }
+
+      _updateMetadata(){
+        window.dispatchEvent(new CustomEvent('sherby-metadata', {
+          detail: {
+            "title": this.work.title + " - Alejandro Sanclemente",
+            "og:title": this.work.title + " - Alejandro Sanclemente",
+            "description": this.work.shortDescription,
+            "og:description": this.work.shortDescription,
+            "og:type": "article",
+            "og:image": this.work.thumbnail,
+            "og:url": window.location.href
+          }
+        }));
+      }
+
+      _computeTimeAgo(publishedDate) {
+        if (Math.abs(moment().diff(publishedDate)) < 86400000) { // 1 day
+          return "Published today";
+        }
+        return "Published " + moment(publishedDate).fromNow();
+      }
+
+      _computeFullTimeAgo(publishedDate) {
+        return moment(publishedDate).format("MMMM DD, YYYY");
+      }
+
+      _computeCategories(categories){
+        let newCategories = [];
+        for (var key in categories) {
+          if (categories.hasOwnProperty(key)) {
+            newCategories.push({key: key, value: categories[key]});
+          }
+        }
+        return newCategories;
+      }
+      _computeItems(items){
+        if (items) {
+          return this.objectValues(items);
+        }
+      }
+
+      objectValues(obj) {
+        let res = [];
+        for (let i in obj) {
+          if (obj.hasOwnProperty(i)) {
+            res.push(obj[i]);
+          }
+        }
+        return res;
+      }
+
+      _setMainColor(){
+        //Change browser theme color
+        let metaThemeColor = document.querySelector('meta[name=theme-color]');
+        metaThemeColor.setAttribute("content", this.work.mainColor);
+
+        //Change background color
+        this.updateStyles({
+          '--progress-color': this.work.mainColor
+        });
+      }
+
+      _toastOpened(isOpen){
+        this.toastOpen = isOpen;
+      }
+
+      _generateAspectRatio(){
+        return (Math.random() * (1.78 - 1.2) + 1.2).toFixed(2);
+      }
+    }
+
+    window.customElements.define(WorkView.is, WorkView);
+  </script>
+</dom-module>

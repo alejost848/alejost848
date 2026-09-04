@@ -1,0 +1,44 @@
+{
+  "entrypoint": "index.html",
+  "shell": "src/portfolio-app.html",
+  "fragments": [
+    "src/home-view.html",
+    "src/tutorials-view.html",
+    "src/works-view.html",
+    "src/tutorial-view.html",
+    "src/work-view.html",
+    "src/about-view.html",
+    "src/error-view.html",
+    "src/elements/notifications-dialog.html",
+    "bower_components/paper-dialog/paper-dialog.html",
+    "bower_components/paper-toast/paper-toast.html"
+  ],
+  "sources": [
+    "src/**/*",
+    "images/**/*"
+  ],
+  "extraDependencies": [
+    "manifest.json",
+    "bower_components/webcomponentsjs/*.js",
+    "firebase-messaging-sw.js",
+    "bower_components/app-storage/app-indexeddb-mirror/app-indexeddb-mirror-worker.js",
+    "bower_components/app-storage/app-indexeddb-mirror/common-worker-scope.js"
+  ],
+  "builds": [
+    {
+      "name": "default",
+      "js": {
+        "minify": true,
+        "compile": true
+      },
+      "css": {"minify": true},
+      "html": {"minify": true},
+      "bundle": false,
+      "addServiceWorker": true,
+      "addPushManifest": false
+    }
+  ],
+  "lint": {
+    "rules": ["polymer-2"]
+  }
+}
