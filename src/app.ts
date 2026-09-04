@@ -28,7 +28,7 @@ export class PortfolioApp extends LitElement {
         min-height: 100vh;
         background-color: var(--app-background-color);
         color: var(--page-title-color);
-        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Google Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       #video_progress {
