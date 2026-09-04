@@ -51,7 +51,8 @@ export const singleViewStyles = css`
   }
 
   #placeholder_card img,
-  #placeholder_card iframe {
+  #placeholder_card iframe,
+  #placeholder_card lite-youtube {
     position: absolute;
     top: 0;
     left: 0;
@@ -60,6 +61,7 @@ export const singleViewStyles = css`
     border: none;
     object-fit: cover;
   }
+
 
   #title_header {
     position: relative;

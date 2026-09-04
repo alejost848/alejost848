@@ -107,6 +107,7 @@ export class LiteYouTube extends LitElement {
   @property({ type: String }) videoTitle = '';
   @property({ type: Number }) currentTime = 0;
   @property({ type: Number }) duration = 0;
+  @property({ type: Boolean }) autoload = false;
   @state() private activated = false;
 
   private player: any = null;
@@ -115,6 +116,9 @@ export class LiteYouTube extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    if (this.autoload) {
+      this.activated = true;
+    }
     window.addEventListener('message', this.handleWindowMessage);
   }
 
@@ -130,11 +134,21 @@ export class LiteYouTube extends LitElement {
     }
   }
 
+  protected firstUpdated() {
+    if (this.activated && !this.player) {
+      this.initPlayer();
+    }
+  }
+
   protected updated(changedProps: PropertyValues) {
     if (changedProps.has('activated') && this.activated && !this.player) {
       this.initPlayer();
     }
+    if (changedProps.has('videoId') && this.player && typeof this.player.loadVideoById === 'function') {
+      this.player.loadVideoById(this.videoId);
+    }
   }
+
 
   public activateVideo() {
     if (!this.activated) {
@@ -253,15 +267,17 @@ export class LiteYouTube extends LitElement {
   render() {
     if (this.activated) {
       const seekParam = this.pendingSeek ? `&start=${Math.floor(this.pendingSeek)}` : '';
+      const autoPlayParam = this.autoload ? '' : '&autoplay=1';
       return html`
         <iframe
-          src="https://www.youtube-nocookie.com/embed/${this.videoId}?autoplay=1&rel=0&enablejsapi=1${seekParam}"
+          src="https://www.youtube.com/embed/${this.videoId}?enablejsapi=1&rel=0${autoPlayParam}${seekParam}"
           title="${this.videoTitle || 'YouTube video'}"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
         ></iframe>
       `;
     }
+
 
     const posterUrl = `https://i.ytimg.com/vi/${this.videoId}/hqdefault.jpg`;
 

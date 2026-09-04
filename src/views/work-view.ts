@@ -8,6 +8,7 @@ import { renderIcon } from '../components/alejost-icons.js';
 import '../components/alejost-progress.js';
 import '../components/alejost-share.js';
 import '../components/lite-youtube.js';
+import '../components/alejost-lightbox.js';
 
 @customElement('work-view')
 export class WorkView extends LitElement {
@@ -95,14 +96,68 @@ export class WorkView extends LitElement {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 16px;
-        margin-top: 24px;
+        margin-top: 16px;
+      }
+
+      .gallery-item-wrapper {
+        position: relative;
+        cursor: pointer;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: var(--card-image-bg-color);
+        aspect-ratio: 16 / 10;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        outline: none;
+      }
+
+      .gallery-item-wrapper:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: var(--shadow-elevation-4dp);
+      }
+
+      .gallery-item-wrapper:focus-visible {
+        outline: 2px solid var(--app-accent-color);
+        outline-offset: 2px;
       }
 
       .gallery-image {
         width: 100%;
-        border-radius: 4px;
+        height: 100%;
+        object-fit: cover;
         display: block;
-        background-color: var(--card-image-bg-color);
+      }
+
+      .gallery-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        color: white;
+      }
+
+      .gallery-item-wrapper:hover .gallery-overlay {
+        opacity: 1;
+      }
+
+      .videos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .video-card-item {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 4px;
+        overflow: hidden;
+        background: var(--card-image-bg-color);
+        box-shadow: var(--shadow-elevation-2dp);
       }
 
       @media (max-width: 800px) {
@@ -111,6 +166,7 @@ export class WorkView extends LitElement {
           gap: 20px;
         }
       }
+
     `,
   ];
 
@@ -119,6 +175,8 @@ export class WorkView extends LitElement {
   @state() private loading = true;
   @state() private videoCurrentTime = 0;
   @state() private videoDuration = 100;
+  @state() private lightboxOpen = false;
+  @state() private lightboxIndex = 0;
 
   connectedCallback() {
     super.connectedCallback();
@@ -163,6 +221,12 @@ export class WorkView extends LitElement {
       this.videoDuration = e.detail.duration;
     }
   };
+
+  private openLightbox(index: number) {
+    this.lightboxIndex = index;
+    this.lightboxOpen = true;
+  }
+
 
   private toArray(val: any): string[] {
     if (!val) return [];
@@ -255,10 +319,10 @@ export class WorkView extends LitElement {
                   id="video"
                   .videoId="${this.work.videoId}"
                   .videoTitle="${this.work.title}"
+                  .autoload="${true}"
                   @video-progress="${this.handleVideoProgress}"
                 ></lite-youtube>
               `
-
             : html`
                 <img
                   src="${this.work.coverImage?.downloadUrl || this.work.thumbnail || ''}"
@@ -328,13 +392,61 @@ export class WorkView extends LitElement {
                   <div class="info-group-title">Gallery</div>
                   <div class="gallery-grid">
                     ${galleryImages.map(
-                      (img: any) => html`
-                        <img
-                          class="gallery-image"
-                          src="${img.downloadUrl || img.url || img}"
-                          loading="lazy"
-                          alt="Gallery item"
-                        />
+                      (img: any, idx: number) => html`
+                        <div
+                          class="gallery-item-wrapper"
+                          @click="${() => this.openLightbox(idx)}"
+                          role="button"
+                          tabindex="0"
+                          aria-label="View gallery image ${idx + 1}"
+                          @keydown="${(e: KeyboardEvent) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              this.openLightbox(idx);
+                            }
+                          }}"
+                        >
+                          <img
+                            class="gallery-image"
+                            src="${img.downloadUrl || img.url || img}"
+                            loading="lazy"
+                            alt="Gallery item ${idx + 1}"
+                          />
+                          <div class="gallery-overlay">
+                            ${renderIcon('open-in-new', 24)}
+                          </div>
+                        </div>
+                      `
+                    )}
+                  </div>
+                </div>
+
+                <alejost-lightbox
+                  .images="${galleryImages.map((img: any) => ({
+                    url: img.downloadUrl || img.url || img,
+                    title: this.work.title,
+                  }))}"
+                  .open="${this.lightboxOpen}"
+                  .currentIndex="${this.lightboxIndex}"
+                  @lightbox-closed="${() => (this.lightboxOpen = false)}"
+                ></alejost-lightbox>
+              `
+            : ''}
+
+          ${this.toArray(this.work.videos).length > 0
+            ? html`
+                <div style="margin-top: 36px;">
+                  <div class="info-group-title">Videos</div>
+                  <div class="videos-grid">
+                    ${this.toArray(this.work.videos).map(
+                      (vid: string) => html`
+                        <div class="video-card-item">
+                          <lite-youtube
+                            .videoId="${vid}"
+                            .videoTitle="${this.work.title}"
+                            .autoload="${false}"
+                          ></lite-youtube>
+                        </div>
                       `
                     )}
                   </div>
@@ -346,3 +458,4 @@ export class WorkView extends LitElement {
     `;
   }
 }
+

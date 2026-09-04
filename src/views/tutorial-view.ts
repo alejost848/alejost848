@@ -282,8 +282,10 @@ export class TutorialView extends LitElement {
                   id="video"
                   .videoId="${this.tutorial.videoId}"
                   .videoTitle="${this.tutorial.title}"
+                  .autoload="${true}"
                   @video-progress="${this.handleVideoProgress}"
                 ></lite-youtube>
+
               `
             : html`
                 <img
