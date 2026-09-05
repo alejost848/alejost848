@@ -3,7 +3,7 @@
     "rules": "database.rules.json"
   },
   "functions": {
-    "runtime": "nodejs12"
+    "runtime": "nodejs20"
   },
   "hosting": {
     "public": "dist",

@@ -1,23 +1,20 @@
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 const slugify = require('slugify');
 const admin = require('firebase-admin');
 
 //Send email
 const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { promisify } = require('util');
+const execFile = promisify(require('child_process').execFile);
 const cors = require('cors')({ origin: true });
-const requestPromise = require('request-promise');
 const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
 
-//Firebase storage
-// const gcs = require('@google-cloud/storage')({ keyFilename: 'service-account-credentials.json' });
-const gcs = require('@google-cloud/storage');
-gcs.keyFilename = 'service-account-credentials.json';
-
-const spawn = require('child-process-promise').spawn;
-const path = require('path');
-const os = require('os');
-const mkdirp = require('mkdirp-promise');
+//Google Cloud Storage
+const { Storage } = require('@google-cloud/storage');
+const gcs = new Storage();
 
 admin.initializeApp();
 
@@ -41,7 +38,7 @@ exports.addTutorial = functions.database
     tutorialInfo.episodeNumber = ('0' + titleAndEpisode.split("#")[1]).slice(-2);
     tutorialInfo.slug = slugify(tutorialInfo.episodeNumber + "-" + tutorialInfo.title, {lower: true});
     tutorialInfo.shortDescription = tutorialInfo.description.split(".")[0] + ".";
-    tutorialInfo.seriesSlug = event.params.seriesName;
+    tutorialInfo.seriesSlug = context.params.seriesName;
 
     //Update the information of the new tutorial in /tutorials
     return snap.ref.update(tutorialInfo)
@@ -169,13 +166,13 @@ function handleCoverImage(workSlug, work) {
   const tempThumbnailPath = path.join(os.tmpdir(), thumbnailPath); // Temporary JPEG file
 
   // Create the temp directory where the storage file will be downloaded.
-  return mkdirp(tempLocalDir).then(() => {
+  return fs.promises.mkdir(tempLocalDir, { recursive: true }).then(() => {
     // Download file from bucket.
     return bucket.file(coverPath).download({ destination: tempCoverPath });
   }).then(() => {
     console.log('Image downloaded locally to', tempCoverPath);
     // Convert image to JPEG with lower quality to reduce file size
-    return spawn('convert', [tempCoverPath, '-strip', '-quality', '80', tempCompressedCoverPath]);
+    return execFile('convert', [tempCoverPath, '-strip', '-quality', '80', tempCompressedCoverPath]);
   }).then(() => {
     console.log('Compressed image created at', tempCoverPath);
     // Upload the compressed image
@@ -183,7 +180,7 @@ function handleCoverImage(workSlug, work) {
   }).then(() => {
     console.log('Compressed image uploaded to bucket.');
     // Generate the thumbnail
-    return spawn('convert', [tempCoverPath, '-thumbnail', '320x180>', tempThumbnailPath]);
+    return execFile('convert', [tempCoverPath, '-thumbnail', '320x180>', tempThumbnailPath]);
   }).then(() => {
     console.log('Thumbnail created at', tempThumbnailPath);
     // Upload the thumbnail.
@@ -196,10 +193,12 @@ function handleCoverImage(workSlug, work) {
     console.log('Original cover removed from bucket.');
 
     // Delete the local files to free up disk space.
-    fs.unlinkSync(tempCoverPath);
-    fs.unlinkSync(tempCompressedCoverPath);
-    fs.unlinkSync(tempThumbnailPath);
-
+    return Promise.all([
+      fs.promises.unlink(tempCoverPath).catch(() => {}),
+      fs.promises.unlink(tempCompressedCoverPath).catch(() => {}),
+      fs.promises.unlink(tempThumbnailPath).catch(() => {})
+    ]);
+  }).then(() => {
     // Get the Signed URLs for the compressed cover and thumbnail.
     const config = {
       action: 'read',
@@ -313,7 +312,6 @@ exports.handleSubscription = functions.database
   });
 
 exports.handleFormSubmit = functions.https.onRequest((req, res) => {
-
   let name = req.body.name;
   let email = req.body.email;
   let subject = req.body.subject;
@@ -321,52 +319,49 @@ exports.handleFormSubmit = functions.https.onRequest((req, res) => {
   let recaptcha_token = req.body.recaptcha_token;
 
   //Add CORS middleware
-  cors(req, res, () => {
-    //Add request-promise to check recaptcha validation
-    requestPromise({
-      uri: 'https://recaptcha.google.com/recaptcha/api/siteverify',
-      method: 'POST',
-      formData: {
-        secret: '6Lf6xzsUAAAAALKwXNboJqVkL9MncNm4-0p6y0Oh',
-        response: recaptcha_token
-      },
-      json: true
-    }).then(result => {
+  cors(req, res, async () => {
+    try {
+      // Check recaptcha validation with native fetch
+      const verifyResponse = await fetch('https://recaptcha.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          secret: '6Lf6xzsUAAAAALKwXNboJqVkL9MncNm4-0p6y0Oh',
+          response: recaptcha_token
+        })
+      });
+      const result = await verifyResponse.json();
+
       if (result.success) {
-
         //Read email template, replace variables with handlebars and send the email
-        fs.readFile(__dirname + '/email.html', 'utf8', (err, data) => {
-          if (err) {
-            throw err;
-          }
+        const templateContent = await fs.promises.readFile(path.join(__dirname, 'email.html'), 'utf8');
+        const template = handlebars.compile(templateContent);
+        const replacements = {
+          name: name,
+          email: email,
+          subject: subject,
+          message: message
+        };
+        const htmlToSend = template(replacements);
 
-          var template = handlebars.compile(data);
-          var replacements = {
-            name: name,
-            email: email,
-            subject: subject,
-            message: message
-          };
-          var htmlToSend = template(replacements);
-
-          var mailOptions = {
-            from: email,
-            to: gmailEmail,
-            subject: "New form submission in alejo.st",
-            html: htmlToSend
-          };
-          mailTransport.sendMail(mailOptions).then(() => {
-            console.log("New form submission", req.body);
-          });
-        });
+        const mailOptions = {
+          from: email,
+          to: gmailEmail,
+          subject: "New form submission in alejo.st",
+          html: htmlToSend
+        };
+        await mailTransport.sendMail(mailOptions);
+        console.log("New form submission", req.body);
 
         res.status(200).json({ message: "valid-token" });
       } else {
-        res.status(400).json({ message: "wrong-token" })
+        res.status(400).json({ message: "wrong-token" });
       }
-    }).catch(reason => {
-      res.status(400).json({ message: "error", error: reason })
-    })
+    } catch (reason) {
+      res.status(400).json({ message: "error", error: String(reason) });
+    }
   });
 });
 
@@ -489,7 +484,12 @@ exports.host = functions.https.onRequest((req, res) => {
     }
   } else {
     //If it's not a bot, send the index file untouched
-    res.status(200).send(fs.readFileSync('./hosting/index.html').toString());
+    const indexPath = fs.existsSync(path.join(__dirname, '../dist/index.html'))
+      ? path.join(__dirname, '../dist/index.html')
+      : fs.existsSync(path.join(__dirname, './hosting/index.html'))
+        ? path.join(__dirname, './hosting/index.html')
+        : './hosting/index.html';
+    res.status(200).send(fs.readFileSync(indexPath, 'utf8'));
   }
 });
 
