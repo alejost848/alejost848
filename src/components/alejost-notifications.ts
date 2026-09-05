@@ -10,6 +10,7 @@ export class AlejostNotifications extends LitElement {
     css`
       :host {
         display: inline-block;
+        position: relative;
       }
 
       .btn-notifications {
@@ -26,12 +27,133 @@ export class AlejostNotifications extends LitElement {
       }
 
       .btn-notifications:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(128, 128, 128, 0.15);
       }
 
       .btn-notifications:disabled {
         opacity: 0.4;
         cursor: not-allowed;
+      }
+
+      /* Popup */
+      .popup {
+        position: absolute;
+        top: calc(100% + 12px);
+        right: -12px;
+        width: 300px;
+        background-color: var(--card-bg-color, #212121);
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        z-index: 1000;
+        opacity: 0;
+        transform: translateY(-8px) scale(0.97);
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .popup.open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+
+      .popup-video {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        display: block;
+        background-color: var(--card-image-bg-color, #1e1e1e);
+      }
+
+      .popup-content {
+        padding: 16px;
+      }
+
+      .popup-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+
+      .popup-title {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--card-title-color, #f4f4f4);
+        flex: 1;
+      }
+
+      /* Toggle switch */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #555;
+        transition: 0.3s;
+        border-radius: 24px;
+      }
+
+      .slider::before {
+        position: absolute;
+        content: '';
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: var(--app-accent-color);
+      }
+
+      input:checked + .slider::before {
+        transform: translateX(20px);
+      }
+
+      .popup-body {
+        font-size: 13px;
+        color: var(--card-description-color, #aaa);
+        line-height: 1.5;
+      }
+
+      .popup-body ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+
+      .popup-body li {
+        padding-top: 4px;
+      }
+
+      /* Arrow pointing up at the bell */
+      .popup::before {
+        content: '';
+        position: absolute;
+        top: -6px;
+        right: 20px;
+        width: 12px;
+        height: 12px;
+        background-color: var(--card-bg-color, #212121);
+        transform: rotate(45deg);
+        border-radius: 2px;
+        box-shadow: -2px -2px 4px rgba(0,0,0,0.1);
       }
     `,
   ];
@@ -40,6 +162,7 @@ export class AlejostNotifications extends LitElement {
   @property({ type: String }) theme = 'dark';
   @state() private subscribed = false;
   @state() private supported = false;
+  @state() private open = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -47,32 +170,61 @@ export class AlejostNotifications extends LitElement {
     if (this.supported && Notification.permission === 'granted') {
       this.subscribed = true;
     }
+    document.addEventListener('click', this.handleOutsideClick);
+    document.addEventListener('keydown', this.handleKeyDown);
   }
 
-  private async toggleNotifications() {
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    document.removeEventListener('click', this.handleOutsideClick);
+    document.removeEventListener('keydown', this.handleKeyDown);
+  }
+
+  private handleOutsideClick = (e: MouseEvent) => {
+    if (this.open && !this.contains(e.composedPath()[0] as Node)) {
+      this.open = false;
+    }
+  };
+
+  private handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && this.open) {
+      this.open = false;
+    }
+  };
+
+  private togglePopup(e: Event) {
+    e.stopPropagation();
+    this.open = !this.open;
+  }
+
+  private async handleToggle(e: Event) {
+    const checked = (e.target as HTMLInputElement).checked;
     if (!this.supported) return;
 
-    if (Notification.permission === 'granted') {
-      this.subscribed = !this.subscribed;
-      this.notifyToast(
-        this.subscribed
-          ? 'Notifications enabled'
-          : "You won't receive any new notifications"
-      );
-    } else if (Notification.permission !== 'denied') {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
+    if (checked) {
+      if (Notification.permission === 'granted') {
         this.subscribed = true;
-        this.notifyToast('Notifications enabled!');
+        this.toast('Notifications enabled!');
+      } else if (Notification.permission !== 'denied') {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          this.subscribed = true;
+          this.toast("You'll get occasional notifications");
+        } else {
+          this.subscribed = false;
+          this.toast('To subscribe, allow notifications in your browser');
+        }
       } else {
-        this.notifyToast('Notification permissions were blocked');
+        this.subscribed = false;
+        this.toast('Notifications are blocked in your browser settings');
       }
     } else {
-      this.notifyToast('Notifications are blocked in your browser settings');
+      this.subscribed = false;
+      this.toast("You won't receive any new notifications");
     }
   }
 
-  private notifyToast(text: string) {
+  private toast(text: string) {
     window.dispatchEvent(
       new CustomEvent('show-toast', {
         detail: { text, duration: 4000 },
@@ -86,17 +238,51 @@ export class AlejostNotifications extends LitElement {
     if (!this.supported) return html``;
 
     const iconName = this.subscribed ? 'notifications-active' : 'notifications';
-    const titleText = this.subscribed ? 'Notifications active' : 'Turn on notifications';
+    const titleText = this.subscribed ? 'Notifications active' : 'Get notified';
+    const videoSrc = `/images/notifications_${this.theme}.mp4`;
 
     return html`
       <button
         class="btn-notifications"
-        @click="${this.toggleNotifications}"
+        @click="${this.togglePopup}"
         title="${titleText}"
         aria-label="${titleText}"
+        aria-expanded="${this.open}"
       >
         ${renderIcon(iconName, 22)}
       </button>
+
+      <div class="popup ${this.open ? 'open' : ''}" role="dialog" aria-label="Notifications settings">
+        <video
+          class="popup-video"
+          src="${videoSrc}"
+          autoplay
+          loop
+          muted
+          playsinline
+        ></video>
+
+        <div class="popup-content">
+          <div class="popup-header">
+            <span class="popup-title">Notifications</span>
+            <label class="switch" title="Toggle notifications">
+              <input
+                type="checkbox"
+                ?checked="${this.subscribed}"
+                @change="${this.handleToggle}"
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="popup-body">
+            If enabled, you'll be notified when:
+            <ul>
+              <li>Tutorials or works are uploaded <span>(three times a month max.)</span></li>
+              <li>A significant change occurs in the web app</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     `;
   }
 }

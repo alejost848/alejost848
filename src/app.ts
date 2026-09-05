@@ -93,6 +93,7 @@ export class PortfolioApp extends LitElement {
         gap: 8px;
         font-size: 15px;
         font-weight: 500;
+        margin-right: 8px;
       }
 
       .header_tab {
