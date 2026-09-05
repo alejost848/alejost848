@@ -102,7 +102,7 @@ export class WorkView extends LitElement {
       .gallery-item-wrapper {
         position: relative;
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: 12px;
         overflow: hidden;
         background-color: var(--card-image-bg-color);
         aspect-ratio: 16 / 10;
@@ -125,22 +125,6 @@ export class WorkView extends LitElement {
         height: 100%;
         object-fit: cover;
         display: block;
-      }
-
-      .gallery-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        color: white;
-      }
-
-      .gallery-item-wrapper:hover .gallery-overlay {
-        opacity: 1;
       }
 
       .videos-grid {
@@ -410,9 +394,6 @@ export class WorkView extends LitElement {
                             loading="lazy"
                             alt="Gallery item ${idx + 1}"
                           />
-                          <div class="gallery-overlay">
-                            ${renderIcon('open-in-new', 24)}
-                          </div>
                         </div>
                       `
                     )}

@@ -231,11 +231,13 @@ export class PortfolioApp extends LitElement {
     });
 
     // Listen for theme toggle events
-    this.addEventListener('theme-changed', ((e: CustomEvent) => {
+    const onThemeChanged = (e: CustomEvent) => {
       if (e.detail?.theme) {
         this.applyTheme(e.detail.theme);
       }
-    }) as EventListener);
+    };
+    this.addEventListener('theme-changed', onThemeChanged as EventListener);
+    window.addEventListener('theme-changed', onThemeChanged as EventListener);
 
     // Listen for YouTube playback progress events
     window.addEventListener('video-progress', ((e: CustomEvent) => {
@@ -290,30 +292,46 @@ export class PortfolioApp extends LitElement {
       setUserTheme(this.user.uid, theme);
     }
 
-    if (theme === 'light') {
-      document.documentElement.style.setProperty('--app-background-color', '#f5f5f5');
-      document.documentElement.style.setProperty('--card-bg-color', '#ffffff');
-      document.documentElement.style.setProperty('--card-image-bg-color', '#e0e0e0');
-      document.documentElement.style.setProperty('--card-title-color', '#212121');
-      document.documentElement.style.setProperty('--card-description-color', '#666666');
-      document.documentElement.style.setProperty('--page-title-color', '#212121');
-      document.documentElement.style.setProperty('--module-title-color', '#333333');
-      document.documentElement.style.setProperty('--header-color', '#444444');
-      document.documentElement.style.setProperty('--bottom-nav-bg-color', '#ffffff');
-      document.documentElement.style.setProperty('--form-border-color', 'rgba(0, 0, 0, 0.2)');
-      document.documentElement.style.setProperty('--form-border-focus-color', 'rgba(0, 0, 0, 0.5)');
-    } else {
-      document.documentElement.style.setProperty('--app-background-color', '#191919');
-      document.documentElement.style.setProperty('--card-bg-color', '#212121');
-      document.documentElement.style.setProperty('--card-image-bg-color', '#1e1e1e');
-      document.documentElement.style.setProperty('--card-title-color', '#f4f4f4');
-      document.documentElement.style.setProperty('--card-description-color', '#aaaaaa');
-      document.documentElement.style.setProperty('--page-title-color', '#ffffff');
-      document.documentElement.style.setProperty('--module-title-color', '#eeeeee');
-      document.documentElement.style.setProperty('--header-color', '#ffffff');
-      document.documentElement.style.setProperty('--bottom-nav-bg-color', '#212121');
-      document.documentElement.style.setProperty('--form-border-color', 'rgba(255, 255, 255, 0.2)');
-      document.documentElement.style.setProperty('--form-border-focus-color', 'rgba(255, 255, 255, 0.6)');
+    const vars: Record<string, string> =
+      theme === 'light'
+        ? {
+            '--app-background-color': '#f2f2f2',
+            '--card-bg-color': '#ffffff',
+            '--card-image-bg-color': '#eeeeee',
+            '--card-title-color': '#444444',
+            '--card-description-color': '#888888',
+            '--card-date-color': '#606060',
+            '--page-title-color': '#555555',
+            '--module-title-color': '#666666',
+            '--header-color': '#555555',
+            '--bottom-nav-bg-color': '#ffffff',
+            '--bottom-nav-item-color': '#777777',
+            '--chip-background-color': 'rgba(0, 0, 0, 0.07)',
+            '--chip-color': 'rgba(0, 0, 0, 0.6)',
+            '--form-border-color': 'rgba(0, 0, 0, 0.2)',
+            '--form-border-focus-color': 'rgba(0, 0, 0, 0.5)',
+          }
+        : {
+            '--app-background-color': '#191919',
+            '--card-bg-color': '#212121',
+            '--card-image-bg-color': '#1e1e1e',
+            '--card-title-color': '#f4f4f4',
+            '--card-description-color': '#aaaaaa',
+            '--card-date-color': '#606060',
+            '--page-title-color': '#ffffff',
+            '--module-title-color': '#eeeeee',
+            '--header-color': '#ffffff',
+            '--bottom-nav-bg-color': '#212121',
+            '--bottom-nav-item-color': '#999999',
+            '--chip-background-color': 'rgba(255, 255, 255, 0.05)',
+            '--chip-color': 'rgba(255, 255, 255, 0.8)',
+            '--form-border-color': 'rgba(255, 255, 255, 0.2)',
+            '--form-border-focus-color': 'rgba(255, 255, 255, 0.6)',
+          };
+
+    for (const [prop, val] of Object.entries(vars)) {
+      document.documentElement.style.setProperty(prop, val);
+      this.style.setProperty(prop, val);
     }
   }
 

@@ -32,7 +32,7 @@ export class AlejostCard extends LitElement {
         display: block;
         margin: 5px;
         width: calc(25% - 10px);
-        border-radius: 4px;
+        border-radius: 12px;
         background-color: var(--card-bg-color);
         overflow: hidden;
         box-shadow: var(--shadow-elevation-2dp);

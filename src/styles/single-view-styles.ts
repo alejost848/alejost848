@@ -11,7 +11,7 @@ export const singleViewStyles = css`
   #card {
     position: relative;
     background-color: var(--card-bg-color);
-    border-radius: 4px;
+    border-radius: 12px;
     overflow: hidden;
     box-shadow: var(--shadow-elevation-2dp);
   }

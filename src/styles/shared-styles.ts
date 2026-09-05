@@ -2,27 +2,7 @@ import { css } from 'lit';
 
 export const sharedStyles = css`
   :host {
-    --app-background-color: #191919;
     --app-accent-color: #2196f3;
-
-    /* Dark theme default */
-    --card-bg-color: #212121;
-    --card-image-bg-color: #1e1e1e;
-    --card-title-color: #f4f4f4;
-    --card-description-color: #aaaaaa;
-    --card-date-color: #606060;
-
-    --header-color: white;
-    --page-title-color: white;
-    --module-title-color: #eeeeee;
-    --bottom-nav-bg-color: #212121;
-    --bottom-nav-item-color: #999999;
-
-    --chip-background-color: rgba(255, 255, 255, 0.05);
-    --chip-color: rgba(255, 255, 255, 0.8);
-
-    --toast-bg-color: #323232;
-    --toast-color: #f4f4f4;
 
     --shadow-elevation-2dp: 0 3px 6px 0 rgba(0, 0, 0, 0.07),
                             0 1px 14px 0 rgba(0, 0, 0, 0.06),

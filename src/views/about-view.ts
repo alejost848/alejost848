@@ -28,7 +28,7 @@ export class AboutView extends LitElement {
       }
 
       .card {
-        border-radius: 4px;
+        border-radius: 12px;
         padding: 30px;
         background-color: var(--card-bg-color);
         box-shadow: var(--shadow-elevation-2dp);
@@ -186,7 +186,15 @@ export class AboutView extends LitElement {
   private toggleTheme(e: Event) {
     const isChecked = (e.target as HTMLInputElement).checked;
     const newTheme = isChecked ? 'dark' : 'light';
+    this.theme = newTheme;
     this.dispatchEvent(
+      new CustomEvent('theme-changed', {
+        detail: { theme: newTheme },
+        bubbles: true,
+        composed: true,
+      })
+    );
+    window.dispatchEvent(
       new CustomEvent('theme-changed', {
         detail: { theme: newTheme },
         bubbles: true,
@@ -354,7 +362,7 @@ export class AboutView extends LitElement {
             <label class="switch">
               <input
                 type="checkbox"
-                ?checked="${this.theme !== 'light'}"
+                .checked="${this.theme !== 'light'}"
                 @change="${this.toggleTheme}"
               />
               <span class="slider-round"></span>

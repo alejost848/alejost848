@@ -141,20 +141,6 @@ export class AlejostNotifications extends LitElement {
       .popup-body li {
         padding-top: 4px;
       }
-
-      /* Arrow pointing up at the bell */
-      .popup::before {
-        content: '';
-        position: absolute;
-        top: -6px;
-        right: 20px;
-        width: 12px;
-        height: 12px;
-        background-color: var(--card-bg-color, #212121);
-        transform: rotate(45deg);
-        border-radius: 2px;
-        box-shadow: -2px -2px 4px rgba(0,0,0,0.1);
-      }
     `,
   ];
 

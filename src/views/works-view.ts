@@ -63,6 +63,11 @@ export class WorksView extends LitElement {
           margin: -3px;
         }
       }
+      .category-chip.skeleton-chip {
+        width: var(--w, 64px);
+        cursor: default;
+        pointer-events: none;
+      }
     `,
   ];
 
@@ -143,7 +148,18 @@ export class WorksView extends LitElement {
               )}
             </div>
           `
-        : ''}
+        : html`
+            <div class="category-chips">
+              ${[48, 88, 76, 68, 64, 48].map(
+                (w) => html`
+                  <span
+                    class="category-chip skeleton-chip skeleton"
+                    style="--w: ${w}px"
+                  ></span>
+                `
+              )}
+            </div>
+          `}
 
       <div class="works-grid">
         ${this.loading
