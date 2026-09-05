@@ -113,18 +113,17 @@ export class PortfolioApp extends LitElement {
         opacity: 1;
       }
 
-      /* Sliding indicator — positioned by JS via CSS custom properties */
+      /* Sliding indicator — transform/width set directly by JS for reliable transitions */
       .tab-indicator {
         position: absolute;
         bottom: -4px;
         left: 0;
         height: 2px;
+        width: 0;
         background-color: var(--app-accent-color);
         border-radius: 1px;
-        width: var(--indicator-width, 0px);
-        transform: translateX(var(--indicator-x, 0px));
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         pointer-events: none;
       }
 
@@ -345,6 +344,7 @@ export class PortfolioApp extends LitElement {
     this.updateIndicator();
   }
 
+
   private updateIndicator() {
     const nav = this.renderRoot.querySelector('.header_tabs') as HTMLElement | null;
     const indicator = this.renderRoot.querySelector('.tab-indicator') as HTMLElement | null;
@@ -352,18 +352,21 @@ export class PortfolioApp extends LitElement {
 
     const active = nav.querySelector('.header_tab.active') as HTMLElement | null;
     if (!active) {
-      indicator.style.setProperty('--indicator-width', '0px');
+      indicator.style.width = '0px';
       return;
     }
 
-    // Position relative to the nav container
+    // Measure positions relative to the nav container
     const navRect = nav.getBoundingClientRect();
     const tabRect = active.getBoundingClientRect();
     const x = tabRect.left - navRect.left;
     const w = tabRect.width;
 
-    nav.style.setProperty('--indicator-x', `${x}px`);
-    nav.style.setProperty('--indicator-width', `${w}px`);
+    // Set directly on the element — the browser transitions from the
+    // previous inline style value, so the animation always starts from
+    // wherever the indicator currently sits, not from x=0.
+    indicator.style.transform = `translateX(${x}px)`;
+    indicator.style.width = `${w}px`;
   }
 
   private renderView() {
