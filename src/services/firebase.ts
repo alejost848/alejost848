@@ -39,12 +39,25 @@ export function initAuth(onUserChanged?: (user: User | null) => void) {
   });
 }
 
+// In-memory cache for instant re-render of visited data
+const dataCache = new Map<string, any>();
+
+export function getCachedPath<T = any>(path: string): T | null {
+  return dataCache.has(path) ? dataCache.get(path) : null;
+}
+
 // Database subscription helper
 export function subscribeToPath<T = any>(
   path: string,
   callback: (data: T | null) => void,
   options?: { orderByChild?: string; limitToLast?: number }
 ): () => void {
+  const cacheKey = `${path}?${options?.orderByChild || ''}:${options?.limitToLast || ''}`;
+  // Deliver cached data synchronously if available
+  if (dataCache.has(cacheKey)) {
+    callback(dataCache.get(cacheKey));
+  }
+
   let dbRef = ref(db, path);
   let q = query(dbRef);
 
@@ -58,23 +71,34 @@ export function subscribeToPath<T = any>(
   const unsubscribe = onValue(
     q,
     (snapshot: DataSnapshot) => {
-      callback(snapshot.val());
+      const val = snapshot.val();
+      dataCache.set(cacheKey, val);
+      callback(val);
     },
     (error) => {
       console.warn(`Error subscribing to path ${path}:`, error);
-      callback(null);
+      if (!dataCache.has(cacheKey)) {
+        callback(null);
+      }
     }
   );
 
   return unsubscribe;
 }
 
-// Fetch single path helper
+// Fetch single path helper with cache
 export async function fetchPathOnce<T = any>(path: string): Promise<T | null> {
+  if (dataCache.has(path)) {
+    return dataCache.get(path);
+  }
   try {
     const dbRef = ref(db, path);
     const snapshot = await get(dbRef);
-    return snapshot.val();
+    const val = snapshot.val();
+    if (val !== null) {
+      dataCache.set(path, val);
+    }
+    return val;
   } catch (error) {
     console.warn(`Error fetching once from path ${path}:`, error);
     return null;

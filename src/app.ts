@@ -141,6 +141,10 @@ export class PortfolioApp extends LitElement {
         padding: 30px 10px 100px 10px;
       }
 
+      main > *[hidden] {
+        display: none !important;
+      }
+
       #bottom_nav {
         display: none;
         background-color: var(--bottom-nav-bg-color);
@@ -203,6 +207,7 @@ export class PortfolioApp extends LitElement {
   @state() private videoProgress = 0;
   @state() private videoDuration = 100;
   @state() private accentColor = '#333333';
+  @state() private visitedPages = new Set<string>();
 
   get isSingleView(): boolean {
     return this.page === 'work' || this.page === 'tutorial';
@@ -261,6 +266,7 @@ export class PortfolioApp extends LitElement {
     this.router = new Router((match: RouteMatch) => {
       this.page = match.page;
       this.params = match.params;
+      this.visitedPages = new Set(this.visitedPages).add(match.page);
       this.updateTitle();
 
       // Reset video progress and accent colors when leaving single view
@@ -409,31 +415,6 @@ export class PortfolioApp extends LitElement {
     }
   }
 
-  private renderView() {
-    switch (this.page) {
-      case 'home':
-        return html`<home-view></home-view>`;
-      case 'works':
-        return html`<works-view .category="${this.params.category || 'all'}"></works-view>`;
-      case 'work':
-        return html`<work-view .slug="${this.params.slug || ''}"></work-view>`;
-      case 'tutorials':
-        return html`<tutorials-view></tutorials-view>`;
-      case 'tutorial':
-        return html`
-          <tutorial-view
-            .series="${this.params.series || ''}"
-            .slug="${this.params.slug || ''}"
-          ></tutorial-view>
-        `;
-      case 'about':
-        return html`<about-view .theme="${this.theme}"></about-view>`;
-      case 'error':
-      default:
-        return html`<error-view></error-view>`;
-    }
-  }
-
   render() {
     return html`
       ${this.isSingleView
@@ -473,7 +454,36 @@ export class PortfolioApp extends LitElement {
       </div>
 
       <main role="main">
-        ${this.renderView()}
+        <home-view ?hidden="${this.page !== 'home'}"></home-view>
+
+        ${this.visitedPages.has('works') || this.page === 'works'
+          ? html`<works-view ?hidden="${this.page !== 'works'}" .category="${this.params.category || 'all'}"></works-view>`
+          : ''}
+
+        ${this.visitedPages.has('tutorials') || this.page === 'tutorials'
+          ? html`<tutorials-view ?hidden="${this.page !== 'tutorials'}"></tutorials-view>`
+          : ''}
+
+        ${this.visitedPages.has('about') || this.page === 'about'
+          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}"></about-view>`
+          : ''}
+
+        ${this.page === 'work'
+          ? html`<work-view .slug="${this.params.slug || ''}"></work-view>`
+          : ''}
+
+        ${this.page === 'tutorial'
+          ? html`
+              <tutorial-view
+                .series="${this.params.series || ''}"
+                .slug="${this.params.slug || ''}"
+              ></tutorial-view>
+            `
+          : ''}
+
+        ${this.page === 'error'
+          ? html`<error-view></error-view>`
+          : ''}
       </main>
 
       <div id="bottom_nav">

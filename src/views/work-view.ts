@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { singleViewStyles } from '../styles/single-view-styles.js';
-import { fetchPathOnce } from '../services/firebase.js';
+import { fetchPathOnce, getCachedPath } from '../services/firebase.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
 import { renderIcon } from '../components/alejost-icons.js';
 import '../components/alejost-progress.js';
@@ -180,16 +180,28 @@ export class WorkView extends LitElement {
 
   private async loadWork() {
     if (!this.slug) return;
-    this.loading = true;
+    const cached = getCachedPath<any>(`/works/${this.slug}`);
+    if (cached) {
+      this.work = cached;
+      this.loading = false;
+      this.applyWorkData(cached);
+    } else {
+      this.loading = true;
+    }
+
     const data = await fetchPathOnce(`/works/${this.slug}`);
     this.work = data;
     this.loading = false;
+    this.applyWorkData(data);
+  }
 
-    if (data?.title) {
+  private applyWorkData(data: any) {
+    if (!data) return;
+    if (data.title) {
       document.title = `${data.title} - Alejandro Sanclemente`;
     }
 
-    const accent = data?.mainColor || '#333333';
+    const accent = data.mainColor || '#333333';
     this.style.setProperty('--progress-color', accent);
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     metaThemeColor?.setAttribute('content', accent);
