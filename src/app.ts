@@ -299,6 +299,8 @@ export class PortfolioApp extends LitElement {
       document.documentElement.style.setProperty('--module-title-color', '#333333');
       document.documentElement.style.setProperty('--header-color', '#444444');
       document.documentElement.style.setProperty('--bottom-nav-bg-color', '#ffffff');
+      document.documentElement.style.setProperty('--form-border-color', 'rgba(0, 0, 0, 0.2)');
+      document.documentElement.style.setProperty('--form-border-focus-color', 'rgba(0, 0, 0, 0.5)');
     } else {
       document.documentElement.style.setProperty('--app-background-color', '#191919');
       document.documentElement.style.setProperty('--card-bg-color', '#212121');
@@ -309,6 +311,8 @@ export class PortfolioApp extends LitElement {
       document.documentElement.style.setProperty('--module-title-color', '#eeeeee');
       document.documentElement.style.setProperty('--header-color', '#ffffff');
       document.documentElement.style.setProperty('--bottom-nav-bg-color', '#212121');
+      document.documentElement.style.setProperty('--form-border-color', 'rgba(255, 255, 255, 0.2)');
+      document.documentElement.style.setProperty('--form-border-focus-color', 'rgba(255, 255, 255, 0.6)');
     }
   }
 

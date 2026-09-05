@@ -13,6 +13,10 @@ export class AboutView extends LitElement {
         width: 100%;
       }
 
+      h1 {
+        margin-bottom: 32px;
+      }
+
       .cards-container {
         display: flex;
         flex-direction: row;
@@ -64,7 +68,7 @@ export class AboutView extends LitElement {
       .form-input {
         background: transparent;
         border: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom: 1px solid var(--form-border-color, rgba(255, 255, 255, 0.2));
         color: var(--page-title-color);
         font-size: 16px;
         padding: 8px 0;
