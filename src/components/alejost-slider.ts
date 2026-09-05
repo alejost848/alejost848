@@ -157,10 +157,9 @@ export class AlejostSlider extends LitElement {
         height: 4px;
         pointer-events: none;
         --progress-height: 4px;
-        --progress-container-color: var(--card-image-bg-color);
+        --progress-container-color: transparent;
         --progress-active-color: var(--bottom-nav-item-color, var(--app-accent-color));
-        --progress-transition-duration: 0.8s;
-        --progress-transition-timing-function: cubic-bezier(0.65, 0, 0.07, 1);
+        --progress-transition-duration: 0s;
         z-index: 4;
       }
 
@@ -255,20 +254,35 @@ export class AlejostSlider extends LitElement {
     }
   };
 
+  private readonly SLIDE_DURATION = 6000; // ms per slide
+
   private startAutoPlay() {
     this.stopAutoPlay();
     if (!this.data || this.data.length <= 1) return;
-    this.timer = window.setInterval(() => {
-      this.progress++;
-      if (this.progress >= 6) {
+
+    let startTime: number | null = null;
+
+    const tick = (timestamp: number) => {
+      if (startTime === null) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      this.progress = Math.min((elapsed / this.SLIDE_DURATION) * 100, 100);
+
+      if (elapsed >= this.SLIDE_DURATION) {
         this.nextSlide();
+        // nextSlide resets progress; restart the loop fresh
+        this.startAutoPlay();
+        return;
       }
-    }, 1000);
+
+      this.timer = requestAnimationFrame(tick);
+    };
+
+    this.timer = requestAnimationFrame(tick);
   }
 
   private stopAutoPlay() {
     if (this.timer !== null) {
-      clearInterval(this.timer);
+      cancelAnimationFrame(this.timer);
       this.timer = null;
     }
   }
@@ -372,7 +386,7 @@ export class AlejostSlider extends LitElement {
           </button>
         </div>
 
-        <alejost-progress id="slider_progress" .value="${this.progress}" .max="${6}"></alejost-progress>
+        <alejost-progress id="slider_progress" .value="${this.progress}" .max="${100}"></alejost-progress>
       </div>
     `;
   }
