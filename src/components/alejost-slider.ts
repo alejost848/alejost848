@@ -260,16 +260,20 @@ export class AlejostSlider extends LitElement {
     this.stopAutoPlay();
     if (!this.data || this.data.length <= 1) return;
 
+    // Back-calculate startTime so the bar resumes from its current position
+    // rather than restarting from 0 on every hover-out.
+    const resumeFrom = this.progress; // 0–100
     let startTime: number | null = null;
 
     const tick = (timestamp: number) => {
-      if (startTime === null) startTime = timestamp;
+      if (startTime === null) {
+        startTime = timestamp - (resumeFrom / 100) * this.SLIDE_DURATION;
+      }
       const elapsed = timestamp - startTime;
       this.progress = Math.min((elapsed / this.SLIDE_DURATION) * 100, 100);
 
       if (elapsed >= this.SLIDE_DURATION) {
         this.nextSlide();
-        // nextSlide resets progress; restart the loop fresh
         this.startAutoPlay();
         return;
       }
