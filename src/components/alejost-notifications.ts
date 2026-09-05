@@ -42,7 +42,7 @@ export class AlejostNotifications extends LitElement {
         right: -12px;
         width: 300px;
         background-color: var(--card-bg-color, #212121);
-        border-radius: 8px;
+        border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         overflow: hidden;
         z-index: 1000;
