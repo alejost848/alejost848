@@ -11,7 +11,7 @@ export const singleViewStyles = css`
   #card {
     position: relative;
     background-color: var(--card-bg-color);
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     box-shadow: var(--shadow-elevation-2dp);
   }
@@ -44,10 +44,11 @@ export const singleViewStyles = css`
     margin-bottom: 23px;
   }
 
-  h1 {
+  #title_header h1 {
     color: white;
     font-size: 32px;
     font-weight: 300;
+    margin: 0 0 6px 0;
   }
 
   #episode_number {

@@ -90,20 +90,18 @@ export const sharedStyles = css`
 
   .button {
     font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 0.018em;
-    line-height: 24px;
-    text-transform: uppercase;
+    font-weight: 600;
+    line-height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 16px;
+    padding: 8px 20px;
     border: none;
-    border-radius: 4px;
+    border-radius: 20px;
     cursor: pointer;
     background-color: transparent;
     color: var(--app-accent-color);
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
     font-family: inherit;
   }
 
@@ -115,6 +113,7 @@ export const sharedStyles = css`
 
   .button.raised:hover {
     box-shadow: var(--shadow-elevation-4dp);
+    transform: translateY(-1px);
   }
 
   .button:disabled {

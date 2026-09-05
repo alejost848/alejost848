@@ -15,7 +15,7 @@ export class WorksView extends LitElement {
       }
 
       .category-chips {
-        margin-top: 36px;
+        margin-top: 0;
         margin-bottom: 24px;
         display: flex;
         flex-direction: row;

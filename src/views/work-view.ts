@@ -21,7 +21,7 @@ export class WorkView extends LitElement {
         flex-direction: row;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 8px;
+        margin-top: 0;
       }
 
       .info-chip {
@@ -78,10 +78,9 @@ export class WorkView extends LitElement {
         background-color: var(--progress-color, var(--app-accent-color));
         color: white;
         text-decoration: none;
-        padding: 8px 18px;
-        border-radius: 4px;
-        font-weight: 500;
-        text-transform: uppercase;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
         font-size: 14px;
         box-shadow: var(--shadow-elevation-2dp);
         transition: background-color 0.8s ease, box-shadow 0.2s ease, transform 0.1s ease;

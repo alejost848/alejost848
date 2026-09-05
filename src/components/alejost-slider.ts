@@ -21,7 +21,7 @@ export class AlejostSlider extends LitElement {
         display: block;
         position: relative;
         overflow: hidden;
-        border-radius: 12px;
+        border-radius: 16px;
         height: 480px;
         box-shadow: var(--shadow-elevation-2dp);
         background-color: var(--card-image-bg-color);

@@ -28,7 +28,7 @@ export class AboutView extends LitElement {
       }
 
       .card {
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 30px;
         background-color: var(--card-bg-color);
         box-shadow: var(--shadow-elevation-2dp);
@@ -41,8 +41,7 @@ export class AboutView extends LitElement {
         align-self: flex-start;
         padding: 0;
         color: var(--app-accent-color);
-        text-transform: uppercase;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 14px;
         text-decoration: none;
         display: inline-block;
