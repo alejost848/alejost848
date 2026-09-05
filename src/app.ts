@@ -59,9 +59,7 @@ export class PortfolioApp extends LitElement {
         --header-color: #ffffff;
       }
 
-      #header.single-view-header .header_tab.active::after {
-        background-color: #ffffff;
-      }
+
 
       .app_toolbar {
         width: 100%;
@@ -88,42 +86,50 @@ export class PortfolioApp extends LitElement {
       }
 
       .header_tabs {
+        position: relative;
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 28px;
-        text-transform: uppercase;
-        font-size: 14px;
+        gap: 8px;
+        font-size: 15px;
         font-weight: 500;
-        letter-spacing: 0.05em;
       }
 
       .header_tab {
         color: var(--header-color);
-        opacity: 0.7;
+        opacity: 0.6;
         text-decoration: none;
-        padding: 6px 0;
+        padding: 6px 14px;
         position: relative;
         transition: opacity 0.2s ease;
+        white-space: nowrap;
       }
 
       .header_tab:hover {
-        opacity: 1;
+        opacity: 0.9;
       }
 
       .header_tab.active {
         opacity: 1;
-        color: var(--header-color);
       }
 
-      .header_tab.active::after {
-        content: '';
+      /* Sliding indicator — positioned by JS via CSS custom properties */
+      .tab-indicator {
         position: absolute;
-        bottom: 0;
+        bottom: -4px;
         left: 0;
-        right: 0;
         height: 2px;
         background-color: var(--app-accent-color);
+        border-radius: 1px;
+        width: var(--indicator-width, 0px);
+        transform: translateX(var(--indicator-x, 0px));
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+      }
+
+      #header.single-view-header .tab-indicator {
+        background-color: #ffffff;
       }
 
       main {
@@ -331,6 +337,31 @@ export class PortfolioApp extends LitElement {
     document.title = title;
   }
 
+  protected updated() {
+    this.updateIndicator();
+  }
+
+  private updateIndicator() {
+    const nav = this.renderRoot.querySelector('.header_tabs') as HTMLElement | null;
+    const indicator = this.renderRoot.querySelector('.tab-indicator') as HTMLElement | null;
+    if (!nav || !indicator) return;
+
+    const active = nav.querySelector('.header_tab.active') as HTMLElement | null;
+    if (!active) {
+      indicator.style.setProperty('--indicator-width', '0px');
+      return;
+    }
+
+    // Position relative to the nav container
+    const navRect = nav.getBoundingClientRect();
+    const tabRect = active.getBoundingClientRect();
+    const x = tabRect.left - navRect.left;
+    const w = tabRect.width;
+
+    nav.style.setProperty('--indicator-x', `${x}px`);
+    nav.style.setProperty('--indicator-width', `${w}px`);
+  }
+
   private renderView() {
     switch (this.page) {
       case 'home':
@@ -380,21 +411,16 @@ export class PortfolioApp extends LitElement {
             <a
               href="/works"
               class="header_tab ${this.page === 'works' || this.page === 'work' ? 'active' : ''}"
-            >
-              Works
-            </a>
+            >Works</a>
             <a
               href="/tutorials"
               class="header_tab ${this.page === 'tutorials' || this.page === 'tutorial' ? 'active' : ''}"
-            >
-              Tutorials
-            </a>
+            >Tutorials</a>
             <a
               href="/about"
               class="header_tab ${this.page === 'about' ? 'active' : ''}"
-            >
-              About
-            </a>
+            >About</a>
+            <span class="tab-indicator"></span>
           </nav>
           <alejost-notifications .user="${this.user}" .theme="${this.isSingleView ? 'dark' : this.theme}"></alejost-notifications>
         </div>
