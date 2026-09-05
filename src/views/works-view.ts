@@ -4,6 +4,11 @@ import { sharedStyles } from '../styles/shared-styles.js';
 import { subscribeToPath } from '../services/firebase.js';
 import '../components/alejost-card.js';
 
+// Module-level in-memory cache so works and categories are only fetched once per session
+let cachedWorks: any[] | null = null;
+let cachedCategories: Record<string, string> | null = null;
+let activeSubscription = false;
+
 @customElement('works-view')
 export class WorksView extends LitElement {
   static styles = [
@@ -73,35 +78,51 @@ export class WorksView extends LitElement {
 
   @property({ type: String }) category = 'all';
 
-  @state() private works: any[] = [];
-  @state() private categories: Record<string, string> = {};
-  @state() private loading = true;
-
-  private unsubscribes: Array<() => void> = [];
+  @state() private works: any[] = cachedWorks || [];
+  @state() private categories: Record<string, string> = cachedCategories || {};
+  @state() private loading = !cachedWorks;
 
   connectedCallback() {
     super.connectedCallback();
+    window.addEventListener('popstate', this.handlePopState);
     this.subscribeData();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.unsubscribes.forEach((unsub) => unsub());
-    this.unsubscribes = [];
+    window.removeEventListener('popstate', this.handlePopState);
+  }
+
+  private handlePopState = () => {
+    const match = window.location.pathname.match(/^\/works(?:\/([^/]+))?$/);
+    if (match) {
+      this.category = match[1] || 'all';
+    }
+  };
+
+  private selectCategory(e: MouseEvent, cat: string) {
+    e.preventDefault();
+    if (this.category === cat) return;
+    this.category = cat;
+    const path = cat === 'all' ? '/works' : `/works/${cat}`;
+    window.history.pushState({}, '', path);
   }
 
   private subscribeData() {
-    const unsubCats = subscribeToPath(
+    if (activeSubscription) return;
+    activeSubscription = true;
+
+    subscribeToPath(
       '/dashboard/autocompleteSuggestions/categories',
       (data) => {
         if (data) {
+          cachedCategories = data;
           this.categories = data;
         }
       }
     );
-    this.unsubscribes.push(unsubCats);
 
-    const unsubWorks = subscribeToPath('/works', (data) => {
+    subscribeToPath('/works', (data) => {
       this.loading = false;
       if (data) {
         const list = Object.entries(data).map(([key, val]: [string, any]) => ({
@@ -109,10 +130,10 @@ export class WorksView extends LitElement {
           key,
         }));
         list.sort((a, b) => (b.publishedDate || 0) - (a.publishedDate || 0));
+        cachedWorks = list;
         this.works = list;
       }
     });
-    this.unsubscribes.push(unsubWorks);
   }
 
   render() {
@@ -133,6 +154,7 @@ export class WorksView extends LitElement {
               <a
                 class="category-chip ${selectedCat === 'all' ? 'active' : ''}"
                 href="/works"
+                @click="${(e: MouseEvent) => this.selectCategory(e, 'all')}"
               >
                 All
               </a>
@@ -141,6 +163,7 @@ export class WorksView extends LitElement {
                   <a
                     class="category-chip ${selectedCat === key ? 'active' : ''}"
                     href="/works/${key}"
+                    @click="${(e: MouseEvent) => this.selectCategory(e, key)}"
                   >
                     ${text}
                   </a>
