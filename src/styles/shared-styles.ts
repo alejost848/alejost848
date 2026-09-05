@@ -54,7 +54,7 @@ export const sharedStyles = css`
   }
 
   h1 {
-    margin: 0;
+    margin: 0 0 24px;
     color: var(--page-title-color);
     font-size: 32px;
     line-height: 34px;

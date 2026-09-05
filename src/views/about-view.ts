@@ -13,10 +13,6 @@ export class AboutView extends LitElement {
         width: 100%;
       }
 
-      h1 {
-        margin-bottom: 32px;
-      }
-
       .cards-container {
         display: flex;
         flex-direction: row;
