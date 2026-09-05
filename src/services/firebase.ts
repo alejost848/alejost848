@@ -9,8 +9,17 @@ import {
   orderByChild,
   limitToLast,
   set,
+  update,
   DataSnapshot,
 } from 'firebase/database';
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+  isSupported,
+  Messaging,
+} from 'firebase/messaging';
+export { isSupported };
 
 const firebaseConfig = {
   apiKey: 'AIzaSyClG-y7seb17rhGIa3hN4QCLn_8Ren4SRw',
@@ -25,6 +34,18 @@ const firebaseConfig = {
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 export const db = getDatabase(app);
+
+// Messaging singleton promise
+let messagingInstance: Messaging | null = null;
+export async function getMessagingService(): Promise<Messaging | null> {
+  if (typeof window === 'undefined') return null;
+  const supported = await isSupported();
+  if (!supported) return null;
+  if (!messagingInstance) {
+    messagingInstance = getMessaging(app);
+  }
+  return messagingInstance;
+}
 
 // Authentication helper
 export function initAuth(onUserChanged?: (user: User | null) => void) {
@@ -113,3 +134,52 @@ export async function setUserTheme(uid: string, theme: string): Promise<void> {
     console.warn('Failed to save user theme:', err);
   }
 }
+
+// User push notifications helpers
+export async function requestFcmToken(): Promise<string | null> {
+  try {
+    const messaging = await getMessagingService();
+    if (!messaging) return null;
+
+    // Register service worker if not already registered
+    let swRegistration: ServiceWorkerRegistration | undefined;
+    if ('serviceWorker' in navigator) {
+      swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    }
+
+    const token = await getToken(messaging, {
+      serviceWorkerRegistration: swRegistration,
+    });
+    return token;
+  } catch (error) {
+    console.warn('Error retrieving FCM token:', error);
+    return null;
+  }
+}
+
+export function onForegroundMessage(callback: (payload: any) => void): () => void {
+  let unsubscribe: (() => void) | null = null;
+  getMessagingService().then((messaging) => {
+    if (messaging) {
+      unsubscribe = onMessage(messaging, callback);
+    }
+  });
+  return () => {
+    if (unsubscribe) unsubscribe();
+  };
+}
+
+export async function saveUserSubscription(uid: string, token: string | null, subscribed: boolean): Promise<void> {
+  try {
+    const updates: Record<string, any> = {
+      subscribed,
+    };
+    if (token) {
+      updates.token = token;
+    }
+    await update(ref(db, `/users/${uid}`), updates);
+  } catch (err) {
+    console.warn('Failed to save user subscription:', err);
+  }
+}
+

@@ -2,6 +2,13 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { renderIcon } from './alejost-icons.js';
+import {
+  isSupported,
+  onForegroundMessage,
+  requestFcmToken,
+  saveUserSubscription,
+  subscribeToPath,
+} from '../services/firebase.js';
 
 @customElement('alejost-notifications')
 export class AlejostNotifications extends LitElement {
@@ -149,21 +156,69 @@ export class AlejostNotifications extends LitElement {
   @state() private subscribed = false;
   @state() private supported = false;
   @state() private open = false;
+  private unsubscribeMessage: (() => void) | null = null;
+  private unsubscribeUserSub: (() => void) | null = null;
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
-    this.supported = 'Notification' in window && 'serviceWorker' in navigator;
-    if (this.supported && Notification.permission === 'granted') {
-      this.subscribed = true;
-    }
+    const messagingSupported = await isSupported();
+    this.supported = messagingSupported && 'Notification' in window && 'serviceWorker' in navigator;
+
     document.addEventListener('click', this.handleOutsideClick);
     document.addEventListener('keydown', this.handleKeyDown);
+
+    // Listen for incoming messages while user is on the site
+    this.unsubscribeMessage = onForegroundMessage((payload) => {
+      const notification = payload?.notification || {};
+      const title = notification.title || 'New notification';
+      const clickAction = notification.click_action || payload?.data?.click_action;
+
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: {
+            text: title,
+            duration: 6000,
+            buttonText: clickAction ? 'Go' : undefined,
+            buttonTapHandler: clickAction ? () => { window.location.href = clickAction; } : undefined,
+          },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    });
+
+    this.checkSubscriptionStatus();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener('click', this.handleOutsideClick);
     document.removeEventListener('keydown', this.handleKeyDown);
+    if (this.unsubscribeMessage) this.unsubscribeMessage();
+    if (this.unsubscribeUserSub) this.unsubscribeUserSub();
+  }
+
+  updated(changedProperties: Map<string, any>) {
+    if (changedProperties.has('user') && this.user?.uid) {
+      this.syncUserSubscription(this.user.uid);
+    }
+  }
+
+  private syncUserSubscription(uid: string) {
+    if (this.unsubscribeUserSub) {
+      this.unsubscribeUserSub();
+    }
+    this.unsubscribeUserSub = subscribeToPath(`/users/${uid}/subscribed`, (val) => {
+      if (typeof val === 'boolean') {
+        this.subscribed = val;
+      }
+    });
+  }
+
+  private checkSubscriptionStatus() {
+    if (this.supported && Notification.permission === 'granted') {
+      this.subscribed = true;
+    }
   }
 
   private handleOutsideClick = (e: MouseEvent) => {
@@ -188,25 +243,32 @@ export class AlejostNotifications extends LitElement {
     if (!this.supported) return;
 
     if (checked) {
-      if (Notification.permission === 'granted') {
+      if (Notification.permission === 'denied') {
+        this.subscribed = false;
+        this.toast('Notifications are blocked in your browser settings');
+        return;
+      }
+
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
         this.subscribed = true;
-        this.toast('Notifications enabled!');
-      } else if (Notification.permission !== 'denied') {
-        const perm = await Notification.requestPermission();
-        if (perm === 'granted') {
-          this.subscribed = true;
-          this.toast("You'll get occasional notifications");
-        } else {
-          this.subscribed = false;
-          this.toast('To subscribe, allow notifications in your browser');
+        this.toast("You'll get occasional notifications");
+
+        // Obtain FCM token and sync to Firebase Realtime Database
+        const token = await requestFcmToken();
+        if (this.user?.uid && token) {
+          await saveUserSubscription(this.user.uid, token, true);
         }
       } else {
         this.subscribed = false;
-        this.toast('Notifications are blocked in your browser settings');
+        this.toast('To subscribe, allow notifications in your browser');
       }
     } else {
       this.subscribed = false;
       this.toast("You won't receive any new notifications");
+      if (this.user?.uid) {
+        await saveUserSubscription(this.user.uid, null, false);
+      }
     }
   }
 
