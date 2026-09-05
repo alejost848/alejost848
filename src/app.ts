@@ -209,6 +209,7 @@ export class PortfolioApp extends LitElement {
   }
 
   private router!: Router;
+  private indicator: HTMLElement | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -341,33 +342,53 @@ export class PortfolioApp extends LitElement {
     document.title = title;
   }
 
-  protected updated() {
-    this.updateIndicator();
+  protected firstUpdated() {
+    // Create the indicator element once, imperatively — it never lives in the
+    // Lit template, so Lit can never destroy or reset its inline styles.
+    const nav = this.renderRoot.querySelector('.header_tabs') as HTMLElement | null;
+    if (nav) {
+      this.indicator = document.createElement('span');
+      this.indicator.className = 'tab-indicator';
+      nav.appendChild(this.indicator);
+      // Place immediately with no transition on first load
+      this.updateIndicator(false);
+    }
   }
 
+  protected updated() {
+    // Animate to new position on every subsequent re-render
+    this.updateIndicator(true);
+  }
 
-  private updateIndicator() {
+  private updateIndicator(animate = true) {
     const nav = this.renderRoot.querySelector('.header_tabs') as HTMLElement | null;
-    const indicator = this.renderRoot.querySelector('.tab-indicator') as HTMLElement | null;
-    if (!nav || !indicator) return;
+    if (!nav || !this.indicator) return;
 
     const active = nav.querySelector('.header_tab.active') as HTMLElement | null;
     if (!active) {
-      indicator.style.width = '0px';
+      this.indicator.style.width = '0px';
       return;
     }
 
-    // Measure positions relative to the nav container
     const navRect = nav.getBoundingClientRect();
     const tabRect = active.getBoundingClientRect();
     const x = tabRect.left - navRect.left;
     const w = tabRect.width;
 
-    // Set directly on the element — the browser transitions from the
-    // previous inline style value, so the animation always starts from
-    // wherever the indicator currently sits, not from x=0.
-    indicator.style.transform = `translateX(${x}px)`;
-    indicator.style.width = `${w}px`;
+    if (!animate) {
+      // Suppress transition for the initial placement so it doesn't fly in on load
+      this.indicator.style.transition = 'none';
+      this.indicator.style.transform = `translateX(${x}px)`;
+      this.indicator.style.width = `${w}px`;
+      // Force a reflow to commit the position, then restore the transition
+      this.indicator.getBoundingClientRect();
+      this.indicator.style.transition = '';
+    } else {
+      // The element's current inline transform/width is the "from" state.
+      // Setting new values triggers the CSS transition naturally.
+      this.indicator.style.transform = `translateX(${x}px)`;
+      this.indicator.style.width = `${w}px`;
+    }
   }
 
   private renderView() {
@@ -428,7 +449,6 @@ export class PortfolioApp extends LitElement {
               href="/about"
               class="header_tab ${this.page === 'about' ? 'active' : ''}"
             >About</a>
-            <span class="tab-indicator"></span>
           </nav>
           <alejost-notifications .user="${this.user}" .theme="${this.isSingleView ? 'dark' : this.theme}"></alejost-notifications>
         </div>
