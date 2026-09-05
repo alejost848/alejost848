@@ -44,15 +44,8 @@ export class Router {
   public navigate(path: string) {
     if (window.location.pathname === path) return;
 
-    if ('startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
-        window.history.pushState({}, '', path);
-        this.resolveCurrentRoute();
-      });
-    } else {
-      window.history.pushState({}, '', path);
-      this.resolveCurrentRoute();
-    }
+    window.history.pushState({}, '', path);
+    this.resolveCurrentRoute();
   }
 
   public resolveCurrentRoute() {

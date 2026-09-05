@@ -376,6 +376,14 @@ export class PortfolioApp extends LitElement {
       nav.appendChild(this.indicator);
       // Place immediately with no transition on first load
       this.updateIndicator(false);
+
+      // Re-place once fonts have loaded or window resizes
+      document.fonts?.ready?.then(() => {
+        this.updateIndicator(false);
+      });
+      window.addEventListener('resize', () => {
+        this.updateIndicator(false);
+      });
     }
   }
 
@@ -394,10 +402,8 @@ export class PortfolioApp extends LitElement {
       return;
     }
 
-    const navRect = nav.getBoundingClientRect();
-    const tabRect = active.getBoundingClientRect();
-    const x = tabRect.left - navRect.left;
-    const w = tabRect.width;
+    const x = active.offsetLeft;
+    const w = active.offsetWidth;
 
     if (!animate) {
       // Suppress transition for the initial placement so it doesn't fly in on load
