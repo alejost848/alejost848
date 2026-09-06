@@ -1,122 +1,87 @@
-# Alejandro Sanclemente — Portfolio & Creative Showcase
+# Hi there, I'm Alejandro Sanclemente 👋
 
-[![Deploy to Firebase on Push](https://github.com/alejost848/alejost848/actions/workflows/firebase-deploy.yml/badge.svg)](https://github.com/alejost848/alejost848/actions/workflows/firebase-deploy.yml)
-[![Live Site](https://img.shields.io/badge/website-alejo.st-2196f3.svg)](https://alejo.st)
+<p align="center">
+  <a href="https://alejo.st">
+    <img src="https://alejo.st/images/cover.png" alt="Alejandro Sanclemente Portfolio Banner" width="100%" />
+  </a>
+</p>
 
-The official portfolio and interactive design showcase of **Alejandro Sanclemente**, Motion Designer and Web Developer based in Tuluá, Colombia.
+<p align="center">
+  <strong>Interactive Media Designer & Creative Developer</strong> based in Tuluá, Colombia 🇨🇴
+</p>
 
-Live website: **[https://alejo.st](https://alejo.st)**
-
----
-
-## ⚡ Tech Stack
-
-- **Core & Framework:** [Lit 3.2](https://lit.dev/) (Modern Web Components, Reactive Properties, Shadow DOM)
-- **Language:** [TypeScript 5.7](https://www.typescriptlang.org/)
-- **Build Tool:** [Vite 6.2](https://vite.dev/) with Rollup vendor chunking
-- **Styling:** Modular CSS inside Web Components, [Google Sans Flex](https://fonts.google.com/specimen/Google+Sans+Flex) variable font
-- **PWA & Caching:** [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/) (Workbox Service Worker, Offline Asset Precaching)
-- **Backend & Cloud:** [Firebase](https://firebase.google.com/)
-  - **Hosting:** Global CDN Edge serving with dynamic caching
-  - **Realtime Database:** Content management for works, tutorials, and subscription counts
-  - **Cloud Functions:** Node.js 20 runtime with modern `firebase-admin` v13 and `firebase-functions` v6
-  - **Cloud Storage:** Media storage with automated server-side image compression
-  - **Push Notifications:** Firebase Cloud Messaging (FCM v1) Web Push
-- **CI / CD:** GitHub Actions automated build and deployment pipeline
+<p align="center">
+  <a href="https://alejo.st"><img src="https://img.shields.io/badge/Website-alejo.st-2196f3?style=flat-square&logo=google-chrome&logoColor=white" alt="Website" /></a>
+  <a href="https://linkedin.com/in/alejost848"><img src="https://img.shields.io/badge/LinkedIn-alejost848-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
+  <a href="https://x.com/alejost848"><img src="https://img.shields.io/badge/X-@alejost848-000000?style=flat-square&logo=x&logoColor=white" alt="X" /></a>
+  <a href="https://docs.google.com/document/d/1AE2Rjhj611kTnwHVvazgWS0EKrr2yZHRErkT3sXqsd8/edit?usp=sharing"><img src="https://img.shields.io/badge/Resume-Google_Docs-4285F4?style=flat-square&logo=googledocs&logoColor=white" alt="Resume" /></a>
+</p>
 
 ---
 
-## ✨ Features
+## 🎨 About Me
 
-- **Blazing Fast Performance:**
-  - Dynamic route code-splitting (`viewLoaders`) reduces initial bundle to ~43 kB.
-  - In-memory keep-alive DOM cache for instant, zero-reload page navigation.
-  - Native CSS View Transitions API for smooth page morphing.
-- **Ambient Visual Polish:**
-  - Ambient backdrop header that dynamically adapts to each project's primary accent color with smooth CSS gradient diffusion.
-- **Enhanced Media Playback:**
-  - High-performance YouTube facade (`<lite-youtube>`) with lazy loading and rAF 60fps progress tracking.
-  - Desktop keyboard playback shortcuts:
-    - <kbd>Space</kbd> / <kbd>K</kbd>: Play / Pause
-    - <kbd>&larr;</kbd> / <kbd>J</kbd>: Jump backward 5 seconds
-    - <kbd>&rarr;</kbd> / <kbd>L</kbd>: Jump forward 5 seconds
-    - <kbd>M</kbd>: Mute / Unmute toggle
-- **SEO & Social Sharing:**
-  - Dynamic Open Graph, Twitter Cards, canonical tags, and Schema.org structured data (`Person`, `VideoObject`, `CreativeWork`).
-  - Crawler-optimized SSR meta injection with edge CDN caching (`Cache-Control: public, s-maxage=3600`).
-  - Standard `robots.txt` and `sitemap.xml`.
-- **Accessibility (a11y):**
-  - "Skip to main content" keyboard link.
-  - High-contrast `:focus-visible` rings.
-  - ARIA landmarks and screen-reader navigation labels.
-- **Contact Form & Anti-Spam:**
-  - Frictionless anti-bot protection using an invisible honeypot and client-side timestamp delta validation (no CAPTCHA interruptions).
-- **Web Push Notifications:**
-  - FCM Web Push integration with permission prompting, background service worker, and topic syncing (`all`).
+I specialize in **motion graphics, UI animation, UX design**, and the development of high-performance **Progressive Web Apps** built with modern Web Components and cloud backends.
+
+- 🎬 **Creative & Animation:** After Effects, Motion Graphics, Visual Design, Storyboarding, Video Editing
+- 💻 **Frontend Engineering:** Lit 3, Web Components, TypeScript, Vite, CSS View Transitions, PWAs
+- ☁️ **Cloud & Backend:** Firebase (Hosting, Cloud Functions Node 20, Realtime DB, Cloud Storage, FCM Web Push)
+- 🚀 **Passions:** Creative coding, interactive design, the future of the open web platform, and space exploration.
 
 ---
 
-## 🛠️ Development
+## 🌟 Featured Project: [alejo.st](https://alejo.st)
+
+This repository (`alejost848/alejost848`) is the open-source codebase for my personal portfolio: **[https://alejo.st](https://alejo.st)**.
+
+### ✨ Highlights of the Platform
+- **Ultra-Fast & Modular:** Dynamic route code-splitting via Lit loaders reduces the initial JavaScript bundle to **~43 kB**.
+- **In-Memory DOM Cache:** Retains visited views in memory for zero-latency, instantaneous page navigation.
+- **Ambient Color Dynamics:** Single project pages dynamically tint the ambient backdrop using the project's accent color with smooth CSS gradient masks.
+- **Enhanced YouTube Player:** Embedded facade (`<lite-youtube>`) with lazy hydration, 60fps rAF progress interpolation, and desktop keyboard shortcuts (<kbd>Space</kbd>, <kbd>J</kbd>/<kbd>L</kbd>, <kbd>M</kbd>).
+- **SEO & Social Sharing:** Dynamic Open Graph, Twitter cards, canonical tags, and Schema.org structured data (`Person`, `VideoObject`, `CreativeWork`) with edge CDN caching.
+- **Push Notifications:** Native FCM Web Push integration to notify subscribers whenever a new tutorial or project is published.
+- **Frictionless Contact Form:** Spam-protected using an invisible honeypot and client-side timestamp delta validation.
+
+---
+
+<details>
+<summary><strong>💻 Developer & Local Setup Guide</strong></summary>
 
 ### Prerequisites
-- Node.js 20 or higher
-- npm 10 or higher
+- Node.js 20+
+- npm 10+
 
-### Install Dependencies
+### Setup & Run
 ```bash
-# Install root dependencies
+# Clone the repository
+git clone https://github.com/alejost848/alejost848.git
+cd alejost848
+
+# Install dependencies
 npm install
-
-# Install Cloud Functions dependencies
 cd functions && npm install && cd ..
-```
 
-### Run Local Development Server
-```bash
+# Start Vite development server
 npm run dev
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### Build for Production
+### Production Build
 ```bash
 npm run build
 ```
-This compiles the TypeScript code, builds optimized production chunks in `dist/`, and automatically synchronizes `dist/index.html` to `functions/hosting/index.html`.
+*(Compiles TypeScript, bundles assets into `dist/`, and synchronizes the HTML shell to `functions/hosting/index.html`)*.
 
-### Syntax & Type Checking
-```bash
-# Type check frontend
-npx tsc --noEmit
-
-# Syntax check backend functions
-cd functions && npm run check
-```
-
----
-
-## 🚀 Deployment
-
-### Automated (Continuous Deployment)
-Any commit pushed to the `main` branch automatically triggers the [GitHub Actions workflow](.github/workflows/firebase-deploy.yml), which builds and deploys the latest version to **https://alejo.st**.
-
+### Deployment
+Pushes to the `main` branch automatically trigger continuous deployment to Firebase via GitHub Actions:
 ```bash
 git push origin main
 ```
 
-### Manual Deployment
-You can also deploy directly using the Firebase CLI:
-```bash
-# Deploy website hosting only
-firebase deploy --only hosting
-
-# Deploy backend cloud functions only
-firebase deploy --only functions
-
-# Deploy everything
-firebase deploy
-```
+</details>
 
 ---
 
-## 📄 License
-All creative works, animations, and motion design projects © Alejandro Sanclemente. Code available under the [MIT License](LICENSE).
+<p align="center">
+  <sub>All creative works, tutorials, and animations © Alejandro Sanclemente. Code released under the <a href="LICENSE">MIT License</a>.</sub>
+</p>
