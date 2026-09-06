@@ -7,6 +7,18 @@
   },
   "hosting": {
     "public": "dist",
+    "redirects": [
+      {
+        "source": "/robots",
+        "destination": "/robots.txt",
+        "type": 301
+      },
+      {
+        "source": "/sitemap",
+        "destination": "/sitemap.xml",
+        "type": 301
+      }
+    ],
     "rewrites": [{
         "source": "/submitForm",
         "function": "handleFormSubmit"
