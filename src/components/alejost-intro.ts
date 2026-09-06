@@ -66,9 +66,9 @@ export class AlejostIntro extends LitElement {
     const maskHole = this.renderRoot.querySelector('#mask-hole') as SVGPathElement | null;
     const logoColorGroup = this.renderRoot.querySelector('#intro-logo-color-group') as SVGGElement | null;
     const logoOuterSilhouette = this.renderRoot.querySelector('#intro-logo-silhouette') as SVGPathElement | null;
-    const clipRect = this.renderRoot.querySelector('#pixel-clip-rect') as SVGRectElement | null;
+    const clipRows = Array.from(this.renderRoot.querySelectorAll('.clip-row')) as SVGRectElement[];
 
-    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette || !clipRect) {
+    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette || clipRows.length === 0) {
       this.finish();
       return;
     }
@@ -93,7 +93,6 @@ export class AlejostIntro extends LitElement {
     logoOuterSilhouette.setAttribute('transform', restingTransform);
 
     const proxyUp = { s: restingScale };
-    const scanProxy = { h: 0 };
 
     // Master Timeline
     const masterTl = gsap.timeline({
@@ -102,16 +101,18 @@ export class AlejostIntro extends LitElement {
       },
     });
 
-    // Phase 1: Pixel row-by-row reveal from top to bottom (retro scanline / raster build)
-    // 24 discrete rows revealed one by one
-    masterTl.to(scanProxy, {
-      h: 24,
-      duration: 0.65,
-      ease: 'steps(24)',
-      onUpdate: () => {
-        clipRect.setAttribute('height', String(scanProxy.h));
-      },
-    });
+    // Phase 1: Pixel row-by-row reveal from top to bottom with GSAP stagger
+    // Each row animates in individually with a snappy stagger
+    masterTl.fromTo(
+      clipRows,
+      { width: 0 },
+      {
+        width: 24,
+        duration: 0.08,
+        stagger: 0.022,
+        ease: 'power1.inOut',
+      }
+    );
 
     // Phase 2: Brief pause to admire the built pixel avatar
     masterTl.to({}, { duration: 0.25 });
@@ -165,12 +166,24 @@ export class AlejostIntro extends LitElement {
   }
 
   render() {
+    const rows = Array.from({ length: TOTAL_ROWS }, (_, i) => i);
+
     return html`
       <svg id="page-intro" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Pixel row-by-row clipPath in local 24x24 coordinate space -->
+          <!-- Pixel row-by-row clipPath with 24 individual row strips for stagger -->
           <clipPath id="pixel-clip" clipPathUnits="userSpaceOnUse">
-            <rect id="pixel-clip-rect" x="0" y="0" width="24" height="0"></rect>
+            ${rows.map(
+              (row) => html`
+                <rect
+                  class="clip-row"
+                  x="0"
+                  y="${row}"
+                  width="0"
+                  height="1.02"
+                ></rect>
+              `
+            )}
           </clipPath>
 
           <!-- Fullscreen mask hole through which the underlying website is revealed -->
