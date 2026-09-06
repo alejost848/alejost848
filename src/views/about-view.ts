@@ -435,13 +435,22 @@ export class AboutView extends LitElement {
                 ${renderIcon('github', 20)}
               </a>
               <a
-                href="https://twitter.com/alejost848"
+                href="https://x.com/alejost848"
                 target="_blank"
                 rel="noopener"
                 class="social-icon-btn"
-                title="Twitter / X"
+                title="X"
               >
-                ${renderIcon('twitter', 20)}
+                ${renderIcon('twitter', 18)}
+              </a>
+              <a
+                href="https://linkedin.com/in/alejost848"
+                target="_blank"
+                rel="noopener"
+                class="social-icon-btn"
+                title="LinkedIn"
+              >
+                ${renderIcon('linkedin', 20)}
               </a>
               <a
                 href="https://dribbble.com/alejost848"

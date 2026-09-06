@@ -236,6 +236,7 @@ export class AlejostCard extends LitElement {
                   src="${thumbnail}"
                   alt="${title}"
                   loading="lazy"
+                  decoding="async"
                   @load="${() => (this.imageLoaded = true)}"
                 />
               `
