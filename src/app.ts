@@ -176,6 +176,43 @@ export class PortfolioApp extends LitElement {
         padding: 30px 10px 100px 10px;
       }
 
+      /* Subtle reveal animation when mask opens up */
+      :host(.intro-pending) #header {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+
+      :host(.intro-pending) main {
+        opacity: 0;
+        transform: scale(0.96) translateY(12px);
+      }
+
+      :host(.intro-pending) #bottom_nav {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      :host(.intro-revealed) #header {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      :host(.intro-revealed) main {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.05s,
+                    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.05s;
+      }
+
+      :host(.intro-revealed) #bottom_nav {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s,
+                    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+      }
+
       main > *[hidden] {
         display: none !important;
       }
@@ -255,6 +292,11 @@ export class PortfolioApp extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+
+    // Set intro-pending class on host during initial intro splash
+    if (this.showIntro) {
+      this.classList.add('intro-pending');
+    }
 
     // Initialize theme mode: Dark by default, or restore saved preference
     const savedMode = (localStorage.getItem('alejo_theme_mode') || localStorage.getItem('alejo_theme')) as ThemeMode | null;
@@ -631,7 +673,14 @@ export class PortfolioApp extends LitElement {
       ${this.showIntro
         ? html`<alejost-intro
             .theme="${this.theme}"
-            @intro-complete="${() => (this.showIntro = false)}"
+            @intro-reveal="${() => {
+              this.classList.remove('intro-pending');
+              this.classList.add('intro-revealed');
+            }}"
+            @intro-complete="${() => {
+              this.showIntro = false;
+              this.classList.remove('intro-pending', 'intro-revealed');
+            }}"
           ></alejost-intro>`
         : ''}
     `;

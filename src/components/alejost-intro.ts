@@ -144,6 +144,9 @@ export class AlejostIntro extends LitElement {
               s: endScale,
               duration: 0.95,
               ease: 'expo.in',
+              onStart: () => {
+                this.dispatchEvent(new CustomEvent('intro-reveal', { bubbles: true, composed: true }));
+              },
               onUpdate: () => {
                 const t = getTransform(proxyUp.s, W, H);
                 maskHole.setAttribute('transform', t);
