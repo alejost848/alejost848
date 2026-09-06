@@ -121,8 +121,11 @@ export class TutorialView extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    const savedTheme = localStorage.getItem('alejo_theme');
+    const isLight = savedTheme ? savedTheme === 'light' : !window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const defaultColor = isLight ? '#f5f5f5' : '#191919';
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    metaThemeColor?.setAttribute('content', '#191919');
+    metaThemeColor?.setAttribute('content', defaultColor);
   }
 
   updated(changedProperties: Map<string, any>) {
