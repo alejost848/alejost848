@@ -102,14 +102,14 @@ export class AlejostIntro extends LitElement {
     });
 
     // Phase 1: Pixel row-by-row reveal from top to bottom with GSAP stagger
-    // Each row animates in individually with a snappy stagger
+    // GSAP attr plugin to animate SVG 'width' attribute from 0 to 24 on each row
     masterTl.fromTo(
       clipRows,
-      { width: 0 },
+      { attr: { width: 0 } },
       {
-        width: 24,
-        duration: 0.08,
-        stagger: 0.022,
+        attr: { width: 24 },
+        duration: 0.12,
+        stagger: 0.025,
         ease: 'power1.inOut',
       }
     );
