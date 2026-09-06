@@ -14,7 +14,7 @@ interface ThemeOption {
 const THEME_OPTIONS: ThemeOption[] = [
   { id: 'dark', label: 'Dark', icon: 'theme-dark' },
   { id: 'light', label: 'Light', icon: 'theme-light' },
-  { id: 'auto', label: 'Auto', icon: 'theme-sun-moon' },
+  { id: 'auto', label: 'Auto', icon: 'brightness-auto' },
 ];
 
 @customElement('alejost-theme-toggle')
