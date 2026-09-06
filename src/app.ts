@@ -58,6 +58,28 @@ export class PortfolioApp extends LitElement {
         pointer-events: none;
       }
 
+      .skip-link {
+        position: absolute;
+        top: -120px;
+        left: 16px;
+        background: var(--app-accent-color, #2196f3);
+        color: #ffffff;
+        padding: 10px 18px;
+        font-weight: 600;
+        font-size: 14px;
+        border-radius: 8px;
+        z-index: 10000;
+        text-decoration: none;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        transition: top 0.2s ease-in-out;
+      }
+
+      .skip-link:focus {
+        top: 16px;
+        outline: 2px solid #ffffff;
+        outline-offset: 2px;
+      }
+
       #header {
         position: relative;
         width: 100%;
@@ -470,6 +492,8 @@ export class PortfolioApp extends LitElement {
 
   render() {
     return html`
+      <a href="#main_content" class="skip-link">Skip to main content</a>
+
       ${this.isSingleView
         ? html`
             <alejost-progress
@@ -480,15 +504,15 @@ export class PortfolioApp extends LitElement {
           `
         : ''}
 
-      <div id="header" class="${this.isSingleView ? 'single-view-header' : ''}">
+      <div id="header" class="${this.isSingleView ? 'single-view-header' : ''}" role="banner">
         <div class="app_toolbar">
-          <a href="/" id="header_link" title="Navigate home">
+          <a href="/" id="header_link" title="Navigate home" aria-label="Home">
             <div id="header_logo">
               ${renderIcon(this.isSingleView ? 'logo' : 'logo-color', 36)}
             </div>
           </a>
           <span class="flex"></span>
-          <nav class="header_tabs">
+          <nav class="header_tabs" aria-label="Main Navigation">
             <a
               href="/works"
               class="header_tab ${this.page === 'works' || this.page === 'work' ? 'active' : ''}"
@@ -506,7 +530,7 @@ export class PortfolioApp extends LitElement {
         </div>
       </div>
 
-      <main role="main">
+      <main id="main_content" role="main" tabindex="-1">
         <home-view ?hidden="${this.page !== 'home'}"></home-view>
 
         ${this.visitedPages.has('works') || this.page === 'works'
@@ -540,7 +564,7 @@ export class PortfolioApp extends LitElement {
       </main>
 
       <div id="bottom_nav">
-        <nav class="bottom_nav_items">
+        <nav class="bottom_nav_items" aria-label="Mobile Navigation">
           <a href="/" class="bottom_nav_item ${this.page === 'home' ? 'active' : ''}">
             ${renderIcon('logo', 20)}
             <div>Home</div>
