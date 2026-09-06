@@ -83,8 +83,8 @@ export class AlejostIntro extends LitElement {
     // Initial scale calculation
     const initScale = DISPLAY_SIZE / LOGO_BOX_SIZE;
     const startScale = initScale * 1.35;
-    // Diagonal distance so the expanding logo completely unmasks the window
-    const endScale = (Math.hypot(W, H) / LOGO_BOX_SIZE) * 2.8;
+    // Massive diagonal coverage so the expanding mask hole completely clears all screen edges and ultra-wide corners
+    const endScale = (Math.hypot(W, H) / LOGO_BOX_SIZE) * 7.5;
 
     const startTransform = getTransform(startScale, W, H);
     maskHole.setAttribute('transform', startTransform);
@@ -97,7 +97,7 @@ export class AlejostIntro extends LitElement {
     // Phase 1: Logo enters and gently scales down to center
     gsap.to(proxyDown, {
       s: initScale,
-      duration: 0.6,
+      duration: 0.65,
       ease: 'expo.out',
       onUpdate: () => {
         const t = getTransform(proxyDown.s, W, H);
@@ -106,10 +106,11 @@ export class AlejostIntro extends LitElement {
         logoOuterSilhouette.setAttribute('transform', t);
       },
       onComplete: () => {
-        // Phase 2: Settle briefly, then color parts fade out revealing the hole,
-        // and mask zooms in dramatically to reveal the entire page.
+        // Phase 2: Rest and settle longer so the user clearly sees the logo,
+        // then fade out the color features to reveal the hole,
+        // and zoom the mask hole aggressively past the screen bounds.
         const tl = gsap.timeline({
-          delay: 0.25,
+          delay: 0.7,
           onComplete: () => {
             this.finish();
           },
@@ -121,7 +122,7 @@ export class AlejostIntro extends LitElement {
             logoColorGroup,
             {
               opacity: 0,
-              duration: 0.35,
+              duration: 0.45,
               ease: 'power2.in',
             },
             0
@@ -131,24 +132,24 @@ export class AlejostIntro extends LitElement {
             logoOuterSilhouette,
             {
               opacity: 0,
-              duration: 0.3,
+              duration: 0.4,
               ease: 'power2.in',
             },
-            0.05
+            0.1
           )
-          // Zoom mask hole outwards
+          // Zoom mask hole outwards massively to reveal the whole page
           .to(
             proxyUp,
             {
               s: endScale,
-              duration: 0.85,
-              ease: 'expo.inOut',
+              duration: 0.95,
+              ease: 'expo.in',
               onUpdate: () => {
                 const t = getTransform(proxyUp.s, W, H);
                 maskHole.setAttribute('transform', t);
               },
             },
-            0.1
+            0.15
           );
       },
     });
