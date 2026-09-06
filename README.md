@@ -1,108 +1,122 @@
-# Polymer App Toolbox - Starter Kit
+# Alejandro Sanclemente — Portfolio & Creative Showcase
 
-[![Build Status](https://travis-ci.org/PolymerElements/polymer-starter-kit.svg?branch=master)](https://travis-ci.org/PolymerElements/polymer-starter-kit)
+[![Deploy to Firebase on Push](https://github.com/alejost848/alejost848/actions/workflows/firebase-deploy.yml/badge.svg)](https://github.com/alejost848/alejost848/actions/workflows/firebase-deploy.yml)
+[![Live Site](https://img.shields.io/badge/website-alejo.st-2196f3.svg)](https://alejo.st)
 
-This template is a starting point for building apps using a drawer-based
-layout. The layout is provided by `app-layout` elements.
+The official portfolio and interactive design showcase of **Alejandro Sanclemente**, Motion Designer and Web Developer based in Tuluá, Colombia.
 
-This template, along with the `polymer-cli` toolchain, also demonstrates use
-of the "PRPL pattern" This pattern allows fast first delivery and interaction with
-the content at the initial route requested by the user, along with fast subsequent
-navigation by pre-caching the remaining components required by the app and
-progressively loading them on-demand as the user navigates through the app.
+Live website: **[https://alejo.st](https://alejo.st)**
 
-The PRPL pattern, in a nutshell:
+---
 
-* **Push** components required for the initial route
-* **Render** initial route ASAP
-* **Pre-cache** components for remaining routes
-* **Lazy-load** and progressively upgrade next routes on-demand
+## ⚡ Tech Stack
 
-### Migrating from Polymer Starter Kit v1?
+- **Core & Framework:** [Lit 3.2](https://lit.dev/) (Modern Web Components, Reactive Properties, Shadow DOM)
+- **Language:** [TypeScript 5.7](https://www.typescriptlang.org/)
+- **Build Tool:** [Vite 6.2](https://vite.dev/) with Rollup vendor chunking
+- **Styling:** Modular CSS inside Web Components, [Google Sans Flex](https://fonts.google.com/specimen/Google+Sans+Flex) variable font
+- **PWA & Caching:** [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/) (Workbox Service Worker, Offline Asset Precaching)
+- **Backend & Cloud:** [Firebase](https://firebase.google.com/)
+  - **Hosting:** Global CDN Edge serving with dynamic caching
+  - **Realtime Database:** Content management for works, tutorials, and subscription counts
+  - **Cloud Functions:** Node.js 20 runtime with modern `firebase-admin` v13 and `firebase-functions` v6
+  - **Cloud Storage:** Media storage with automated server-side image compression
+  - **Push Notifications:** Firebase Cloud Messaging (FCM v1) Web Push
+- **CI / CD:** GitHub Actions automated build and deployment pipeline
 
-[Check out our blog post that covers what's changed in PSK2 and how to migrate!](https://www.polymer-project.org/1.0/blog/2016-08-18-polymer-starter-kit-or-polymer-cli.html)
+---
 
-### Quickstart
+## ✨ Features
 
-We've recorded a Polycast to get you up and running with PSK2 fast!
+- **Blazing Fast Performance:**
+  - Dynamic route code-splitting (`viewLoaders`) reduces initial bundle to ~43 kB.
+  - In-memory keep-alive DOM cache for instant, zero-reload page navigation.
+  - Native CSS View Transitions API for smooth page morphing.
+- **Ambient Visual Polish:**
+  - Ambient backdrop header that dynamically adapts to each project's primary accent color with smooth CSS gradient diffusion.
+- **Enhanced Media Playback:**
+  - High-performance YouTube facade (`<lite-youtube>`) with lazy loading and rAF 60fps progress tracking.
+  - Desktop keyboard playback shortcuts:
+    - <kbd>Space</kbd> / <kbd>K</kbd>: Play / Pause
+    - <kbd>&larr;</kbd> / <kbd>J</kbd>: Jump backward 5 seconds
+    - <kbd>&rarr;</kbd> / <kbd>L</kbd>: Jump forward 5 seconds
+    - <kbd>M</kbd>: Mute / Unmute toggle
+- **SEO & Social Sharing:**
+  - Dynamic Open Graph, Twitter Cards, canonical tags, and Schema.org structured data (`Person`, `VideoObject`, `CreativeWork`).
+  - Crawler-optimized SSR meta injection with edge CDN caching (`Cache-Control: public, s-maxage=3600`).
+  - Standard `robots.txt` and `sitemap.xml`.
+- **Accessibility (a11y):**
+  - "Skip to main content" keyboard link.
+  - High-contrast `:focus-visible` rings.
+  - ARIA landmarks and screen-reader navigation labels.
+- **Contact Form & Anti-Spam:**
+  - Frictionless anti-bot protection using an invisible honeypot and client-side timestamp delta validation (no CAPTCHA interruptions).
+- **Web Push Notifications:**
+  - FCM Web Push integration with permission prompting, background service worker, and topic syncing (`all`).
 
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=HgJ0XCyBwzY&list=PLNYkxOF6rcIDdS7HWIC_BYRunV6MHs5xo&index=10">
-    <img src="https://img.youtube.com/vi/HgJ0XCyBwzY/0.jpg" alt="Polymer Starter Kit 2 video">
-  </a>
-</p>
+---
 
-### Setup
+## 🛠️ Development
 
-##### Prerequisites
+### Prerequisites
+- Node.js 20 or higher
+- npm 10 or higher
 
-First, install [Polymer CLI](https://github.com/Polymer/polymer-cli) using
-[npm](https://www.npmjs.com) (we assume you have pre-installed [node.js](https://nodejs.org)).
+### Install Dependencies
+```bash
+# Install root dependencies
+npm install
 
-    npm install -g polymer-cli
+# Install Cloud Functions dependencies
+cd functions && npm install && cd ..
+```
 
-Second, install [Bower](https://bower.io/) using [npm](https://www.npmjs.com)
+### Run Local Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-    npm install -g bower
+### Build for Production
+```bash
+npm run build
+```
+This compiles the TypeScript code, builds optimized production chunks in `dist/`, and automatically synchronizes `dist/index.html` to `functions/hosting/index.html`.
 
-##### Initialize project from template
+### Syntax & Type Checking
+```bash
+# Type check frontend
+npx tsc --noEmit
 
-    mkdir portfolio-app
-    cd portfolio-app
-    polymer init starter-kit
+# Syntax check backend functions
+cd functions && npm run check
+```
 
-### Start the development server
+---
 
-This command serves the app at `http://localhost:8080` and provides basic URL
-routing for the app:
+## 🚀 Deployment
 
-    polymer serve --open
+### Automated (Continuous Deployment)
+Any commit pushed to the `main` branch automatically triggers the [GitHub Actions workflow](.github/workflows/firebase-deploy.yml), which builds and deploys the latest version to **https://alejo.st**.
 
-### Build
+```bash
+git push origin main
+```
 
-This command performs HTML, CSS, and JS minification on the application
-dependencies, and generates a service-worker.js file with code to pre-cache the
-dependencies based on the entrypoint and fragments specified in `polymer.json`.
-The minified files are output to the `build/unbundled` folder, and are suitable
-for serving from a HTTP/2+Push compatible server.
+### Manual Deployment
+You can also deploy directly using the Firebase CLI:
+```bash
+# Deploy website hosting only
+firebase deploy --only hosting
 
-In addition the command also creates a fallback `build/bundled` folder,
-generated using fragment bundling, suitable for serving from non
-H2/push-compatible servers or to clients that do not support H2/Push.
+# Deploy backend cloud functions only
+firebase deploy --only functions
 
-    polymer build
+# Deploy everything
+firebase deploy
+```
 
-### Preview the build
+---
 
-This command serves the minified version of the app at `http://localhost:8080`
-in an unbundled state, as it would be served by a push-compatible server:
-
-    polymer serve build/unbundled
-
-This command serves the minified version of the app at `http://localhost:8080`
-generated using fragment bundling:
-
-    polymer serve build/bundled
-
-### Run tests
-
-This command will run [Web Component Tester](https://github.com/Polymer/web-component-tester)
-against the browsers currently installed on your machine:
-
-    polymer test
-
-If running Windows you will need to set the following environment variables:
-
-- LAUNCHPAD_BROWSERS
-- LAUNCHPAD_CHROME
-
-Read More here [daffl/launchpad](https://github.com/daffl/launchpad#environment-variables-impacting-local-browsers-detection)
-
-### Adding a new view
-
-You can extend the app by adding more views that will be demand-loaded
-e.g. based on the route, or to progressively render non-critical sections of the
-application. Each new demand-loaded fragment should be added to the list of
-`fragments` in the included `polymer.json` file. This will ensure those
-components and their dependencies are added to the list of pre-cached components
-and will be included in the `bundled` build.
+## 📄 License
+All creative works, animations, and motion design projects © Alejandro Sanclemente. Code available under the [MIT License](LICENSE).
