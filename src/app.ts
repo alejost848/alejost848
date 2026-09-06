@@ -281,7 +281,7 @@ export class PortfolioApp extends LitElement {
   @state() private videoDuration = 100;
   @state() private accentColor = '#333333';
   @state() private visitedPages = new Set<string>();
-  @state() private showIntro = true;
+  @state() private showIntro = !sessionStorage.getItem('alejo_intro_shown');
 
   get isSingleView(): boolean {
     return this.page === 'work' || this.page === 'tutorial';
@@ -680,6 +680,11 @@ export class PortfolioApp extends LitElement {
             @intro-complete="${() => {
               this.showIntro = false;
               this.classList.remove('intro-pending', 'intro-revealed');
+              try {
+                sessionStorage.setItem('alejo_intro_shown', '1');
+              } catch {
+                // Ignore private browsing restrictions
+              }
             }}"
           ></alejost-intro>`
         : ''}
