@@ -325,12 +325,7 @@ export class AboutView extends LitElement {
               </div>
             </form>
           </div>
-        </div>
-      </div>
 
-      <div class="cards-container">
-
-        <div class="card-group">
           <div class="card credits-card">
             <span style="color: var(--card-date-color); font-size: 14px;">
               © ${year} Alejandro Sanclemente
