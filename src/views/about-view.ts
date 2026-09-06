@@ -356,9 +356,6 @@ export class AboutView extends LitElement {
       </div>
 
       <footer class="credits-footer">
-        <span class="credits-copyright">
-          © ${year} Alejandro Sanclemente
-        </span>
         <div class="social-icons">
           <a
             href="https://youtube.com/alejost848"
@@ -406,6 +403,9 @@ export class AboutView extends LitElement {
             ${renderIcon('dribbble', 20)}
           </a>
         </div>
+        <span class="credits-copyright">
+          © ${year} Alejandro Sanclemente
+        </span>
       </footer>
     `;
   }
