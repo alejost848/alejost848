@@ -14,7 +14,7 @@ interface ThemeOption {
 const THEME_OPTIONS: ThemeOption[] = [
   { id: 'dark', label: 'Dark', icon: 'theme-dark' },
   { id: 'light', label: 'Light', icon: 'theme-light' },
-  { id: 'auto', label: 'Auto', icon: 'theme-system' },
+  { id: 'auto', label: 'Auto', icon: 'theme-contrast' },
 ];
 
 @customElement('alejost-theme-toggle')
@@ -55,7 +55,6 @@ export class AlejostThemeToggle extends LitElement {
         right: -6px;
         min-width: 148px;
         background-color: var(--card-bg-color, #212121);
-        border: 1px solid var(--form-border-color, rgba(255, 255, 255, 0.15));
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         padding: 6px;
@@ -123,13 +122,21 @@ export class AlejostThemeToggle extends LitElement {
     super.connectedCallback();
     document.addEventListener('click', this.handleOutsideClick);
     document.addEventListener('keydown', this.handleKeyDown);
+    window.addEventListener('header-popup-opened', this.handleHeaderPopupOpened as EventListener);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener('click', this.handleOutsideClick);
     document.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('header-popup-opened', this.handleHeaderPopupOpened as EventListener);
   }
+
+  private handleHeaderPopupOpened = (e: CustomEvent) => {
+    if (e.detail?.source !== 'theme' && this.open) {
+      this.open = false;
+    }
+  };
 
   private handleOutsideClick = (e: MouseEvent) => {
     if (this.open && !this.contains(e.composedPath()[0] as Node)) {
@@ -146,6 +153,11 @@ export class AlejostThemeToggle extends LitElement {
   private togglePopup(e: Event) {
     e.stopPropagation();
     this.open = !this.open;
+    if (this.open) {
+      window.dispatchEvent(
+        new CustomEvent('header-popup-opened', { detail: { source: 'theme' } })
+      );
+    }
   }
 
   private selectMode(mode: ThemeMode) {

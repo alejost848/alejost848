@@ -188,15 +188,23 @@ export class AlejostNotifications extends LitElement {
     });
 
     this.checkSubscriptionStatus();
+    window.addEventListener('header-popup-opened', this.handleHeaderPopupOpened as EventListener);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener('click', this.handleOutsideClick);
     document.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('header-popup-opened', this.handleHeaderPopupOpened as EventListener);
     if (this.unsubscribeMessage) this.unsubscribeMessage();
     if (this.unsubscribeUserSub) this.unsubscribeUserSub();
   }
+
+  private handleHeaderPopupOpened = (e: CustomEvent) => {
+    if (e.detail?.source !== 'notifications' && this.open) {
+      this.open = false;
+    }
+  };
 
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has('user') && this.user?.uid) {
@@ -236,6 +244,11 @@ export class AlejostNotifications extends LitElement {
   private togglePopup(e: Event) {
     e.stopPropagation();
     this.open = !this.open;
+    if (this.open) {
+      window.dispatchEvent(
+        new CustomEvent('header-popup-opened', { detail: { source: 'notifications' } })
+      );
+    }
   }
 
   private async handleToggle(e: Event) {
