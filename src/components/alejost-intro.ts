@@ -77,7 +77,7 @@ export class AlejostIntro extends LitElement {
     maskCover.setAttribute('width', String(W));
     maskCover.setAttribute('height', String(H));
 
-    const bgColor = this.theme === 'light' ? '#f2f2f2' : '#191919';
+    const bgColor = this.theme === 'light' ? '#e5e5e5' : '#111111';
     bgRect.setAttribute('fill', bgColor);
 
     // Initial scale calculation
