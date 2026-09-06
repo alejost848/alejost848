@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { singleViewStyles } from '../styles/single-view-styles.js';
 import { fetchPathOnce, getCachedPath } from '../services/firebase.js';
+import { updateSeo } from '../services/seo.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
 import { renderIcon } from '../components/alejost-icons.js';
 import '../components/alejost-progress.js';
@@ -197,9 +198,32 @@ export class WorkView extends LitElement {
 
   private applyWorkData(data: any) {
     if (!data) return;
-    if (data.title) {
-      document.title = `${data.title} - Alejandro Sanclemente`;
-    }
+
+    const title = data.title ? `${data.title} - Alejandro Sanclemente` : 'Work - Alejandro Sanclemente';
+    const description = data.shortDescription || data.description || 'Motion design and creative project by Alejandro Sanclemente.';
+    const imageUrl = data.videoId
+      ? `https://i.ytimg.com/vi/${data.videoId}/maxresdefault.jpg`
+      : data.coverImage?.downloadUrl || `${window.location.origin}/images/cover.png`;
+
+    updateSeo({
+      title,
+      description,
+      image: imageUrl,
+      url: `${window.location.origin}/work/${this.slug}`,
+      type: 'article',
+      schema: {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: data.title || '',
+        description,
+        image: imageUrl,
+        creator: {
+          '@type': 'Person',
+          name: 'Alejandro Sanclemente',
+          url: window.location.origin,
+        },
+      },
+    });
 
     const accent = data.mainColor || '#333333';
     this.style.setProperty('--progress-color', accent);

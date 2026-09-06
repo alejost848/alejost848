@@ -4,6 +4,7 @@ import { sharedStyles } from './styles/shared-styles.js';
 import { renderIcon } from './components/alejost-icons.js';
 import { Router, RouteMatch } from './router.js';
 import { initAuth, setUserTheme } from './services/firebase.js';
+import { updateSeo } from './services/seo.js';
 
 import './components/alejost-progress.js';
 import './components/alejost-notifications.js';
@@ -354,28 +355,60 @@ export class PortfolioApp extends LitElement {
   }
 
   private updateTitle() {
-    let title = 'Alejandro Sanclemente - Motion Designer and PWA Developer';
     switch (this.page) {
       case 'home':
-        title = 'Alejandro Sanclemente - Motion Designer and PWA Developer';
+        updateSeo({
+          title: 'Alejandro Sanclemente - Motion Designer and PWA Developer',
+          description: 'Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development.',
+          url: window.location.origin,
+          schema: {
+            '@context': 'https://schema.org',
+            '@type': 'Person',
+            name: 'Alejandro Sanclemente',
+            jobTitle: 'Motion Designer & Web Developer',
+            url: window.location.origin,
+            sameAs: [
+              'https://youtube.com/alejost848',
+              'https://github.com/alejost848',
+              'https://x.com/alejost848',
+              'https://linkedin.com/in/alejost848',
+              'https://dribbble.com/alejost848'
+            ]
+          }
+        });
         break;
       case 'works':
-        title = 'Works - Alejandro Sanclemente';
+        updateSeo({
+          title: 'Works - Alejandro Sanclemente',
+          description: 'Explore motion design, UI/UX animation, branding, and interactive projects by Alejandro Sanclemente.',
+          url: `${window.location.origin}/works`,
+        });
         break;
       case 'tutorials':
-        title = 'Tutorials - Alejandro Sanclemente';
+        updateSeo({
+          title: 'Tutorials - Alejandro Sanclemente',
+          description: 'Video tutorials and step-by-step guides on motion design, After Effects, and creative animation.',
+          url: `${window.location.origin}/tutorials`,
+        });
         break;
       case 'about':
-        title = 'About - Alejandro Sanclemente';
+        updateSeo({
+          title: 'About - Alejandro Sanclemente',
+          description: 'Learn about Alejandro Sanclemente, his background, skills, software expertise, and contact information.',
+          url: `${window.location.origin}/about`,
+        });
         break;
       case 'work':
       case 'tutorial':
-        // Individual views set their own document.title once loaded
+        // Individual views update SEO once their specific item data loads
         break;
       default:
-        title = '404 Not Found - Alejandro Sanclemente';
+        updateSeo({
+          title: '404 Not Found - Alejandro Sanclemente',
+          description: "Sorry, we can't find the page you're looking for.",
+          url: window.location.href,
+        });
     }
-    document.title = title;
   }
 
   protected firstUpdated() {

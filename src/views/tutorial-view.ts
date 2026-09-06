@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { singleViewStyles } from '../styles/single-view-styles.js';
 import { fetchPathOnce } from '../services/firebase.js';
+import { updateSeo } from '../services/seo.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
 import '../components/alejost-progress.js';
 import '../components/alejost-share.js';
@@ -140,15 +141,37 @@ export class TutorialView extends LitElement {
         (v: any) => v.slug === this.slug || v.key === this.slug
       );
       this.tutorial = match || null;
-      if (this.tutorial?.title) {
-        document.title = `${this.tutorial.title} - Alejandro Sanclemente`;
-      }
-      if (this.tutorial?.mainColor) {
-        this.setMainColor(this.tutorial.mainColor);
-      } else if (this.tutorial?.thumbnail) {
-        extractDominantColor(this.tutorial.thumbnail).then((color) => {
-          this.setMainColor(color);
+      if (this.tutorial) {
+        const title = this.tutorial.title ? `${this.tutorial.title} - Alejandro Sanclemente` : 'Tutorial - Alejandro Sanclemente';
+        const description = this.tutorial.shortDescription || this.tutorial.description || 'Motion design tutorial by Alejandro Sanclemente.';
+        const thumbnailUrl = this.tutorial.thumbnail || (this.tutorial.videoId ? `https://i.ytimg.com/vi/${this.tutorial.videoId}/maxresdefault.jpg` : `${window.location.origin}/images/cover.png`);
+        const videoUrl = this.tutorial.videoId ? `https://www.youtube.com/watch?v=${this.tutorial.videoId}` : `${window.location.origin}/tutorial/${this.series}/${this.slug}`;
+
+        updateSeo({
+          title,
+          description,
+          image: thumbnailUrl,
+          url: `${window.location.origin}/tutorial/${this.series}/${this.slug}`,
+          type: 'video.other',
+          schema: {
+            '@context': 'https://schema.org',
+            '@type': 'VideoObject',
+            name: this.tutorial.title || '',
+            description,
+            thumbnailUrl: [thumbnailUrl],
+            uploadDate: this.tutorial.publishedDate ? new Date(this.tutorial.publishedDate).toISOString() : new Date().toISOString(),
+            contentUrl: videoUrl,
+            embedUrl: this.tutorial.videoId ? `https://www.youtube.com/embed/${this.tutorial.videoId}` : undefined,
+          },
         });
+
+        if (this.tutorial.mainColor) {
+          this.setMainColor(this.tutorial.mainColor);
+        } else if (this.tutorial.thumbnail) {
+          extractDominantColor(this.tutorial.thumbnail).then((color) => {
+            this.setMainColor(color);
+          });
+        }
       }
     } else {
       this.tutorial = null;
