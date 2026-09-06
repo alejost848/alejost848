@@ -9,6 +9,8 @@ import { updateSeo } from './services/seo.js';
 import './components/alejost-progress.js';
 import './components/alejost-notifications.js';
 import './components/alejost-toast.js';
+import './components/alejost-theme-toggle.js';
+import type { ThemeMode } from './components/alejost-theme-toggle.js';
 
 
 // Lazy view loaders map
@@ -235,6 +237,7 @@ export class PortfolioApp extends LitElement {
   @state() private page = 'home';
   @state() private params: Record<string, string> = {};
   @state() private theme = 'dark';
+  @state() private themeMode: ThemeMode = 'dark';
   @state() private user: any = null;
   @state() private videoProgress = 0;
   @state() private videoDuration = 100;
@@ -251,26 +254,35 @@ export class PortfolioApp extends LitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    // Check stored theme or detect OS preference
-    const savedTheme = localStorage.getItem('alejo_theme');
-    if (savedTheme) {
-      this.applyTheme(savedTheme);
+    // Initialize theme mode: Dark by default, or restore saved preference
+    const savedMode = (localStorage.getItem('alejo_theme_mode') || localStorage.getItem('alejo_theme')) as ThemeMode | null;
+    if (savedMode === 'dark' || savedMode === 'light' || savedMode === 'auto') {
+      this.applyThemeMode(savedMode);
     } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      this.applyTheme(prefersDark ? 'dark' : 'light');
+      // Default to dark theme as requested
+      this.applyThemeMode('dark');
     }
 
-    // Live OS theme listener
+    // Live OS theme listener: updates effective theme if mode is 'auto'
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('alejo_theme')) {
+      if (this.themeMode === 'auto') {
         this.applyTheme(e.matches ? 'dark' : 'light');
       }
     });
 
-    // Listen for theme toggle events
+    // Listen for theme mode changes (from header toggle or about view)
+    const onThemeModeChanged = (e: CustomEvent) => {
+      if (e.detail?.mode) {
+        this.applyThemeMode(e.detail.mode);
+      }
+    };
+    this.addEventListener('theme-mode-changed', onThemeModeChanged as EventListener);
+    window.addEventListener('theme-mode-changed', onThemeModeChanged as EventListener);
+
+    // Backward-compatible listener for legacy theme-changed events
     const onThemeChanged = (e: CustomEvent) => {
       if (e.detail?.theme) {
-        this.applyTheme(e.detail.theme);
+        this.applyThemeMode(e.detail.theme as ThemeMode);
       }
     };
     this.addEventListener('theme-changed', onThemeChanged as EventListener);
@@ -327,12 +339,33 @@ export class PortfolioApp extends LitElement {
     });
   }
 
+  private applyThemeMode(mode: ThemeMode) {
+    this.themeMode = mode;
+    localStorage.setItem('alejo_theme_mode', mode);
+
+    const effectiveTheme: 'dark' | 'light' =
+      mode === 'auto'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : mode;
+
+    this.applyTheme(effectiveTheme);
+  }
+
   private applyTheme(theme: string) {
     this.theme = theme;
     localStorage.setItem('alejo_theme', theme);
 
     if (this.user?.uid) {
-      setUserTheme(this.user.uid, theme);
+      setUserTheme(this.user.uid, this.themeMode);
+    }
+
+    // Keep meta theme-color in sync on non-single views
+    if (this.page !== 'work' && this.page !== 'tutorial') {
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      metaThemeColor?.setAttribute(
+        'content',
+        theme === 'light' ? '#f5f5f5' : '#191919'
+      );
     }
 
     const vars: Record<string, string> =
@@ -526,6 +559,7 @@ export class PortfolioApp extends LitElement {
               class="header_tab ${this.page === 'about' ? 'active' : ''}"
             >About</a>
           </nav>
+          <alejost-theme-toggle .mode="${this.themeMode}"></alejost-theme-toggle>
           <alejost-notifications .user="${this.user}" .theme="${this.isSingleView ? 'dark' : this.theme}"></alejost-notifications>
         </div>
       </div>
@@ -542,7 +576,7 @@ export class PortfolioApp extends LitElement {
           : ''}
 
         ${this.visitedPages.has('about') || this.page === 'about'
-          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}"></about-view>`
+          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}" .themeMode="${this.themeMode}"></about-view>`
           : ''}
 
         ${this.page === 'work'
