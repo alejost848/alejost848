@@ -9,13 +9,20 @@ import './components/alejost-progress.js';
 import './components/alejost-notifications.js';
 import './components/alejost-toast.js';
 
-import './views/home-view.js';
-import './views/works-view.js';
-import './views/work-view.js';
-import './views/tutorials-view.js';
-import './views/tutorial-view.js';
-import './views/about-view.js';
-import './views/error-view.js';
+
+// Lazy view loaders map
+const viewLoaders: Record<string, () => Promise<unknown>> = {
+  home: () => import('./views/home-view.js'),
+  works: () => import('./views/works-view.js'),
+  work: () => import('./views/work-view.js'),
+  tutorials: () => import('./views/tutorials-view.js'),
+  tutorial: () => import('./views/tutorial-view.js'),
+  about: () => import('./views/about-view.js'),
+  error: () => import('./views/error-view.js'),
+};
+
+// Eagerly preload home view for instant landing
+viewLoaders.home();
 
 @customElement('portfolio-app')
 export class PortfolioApp extends LitElement {
@@ -263,7 +270,12 @@ export class PortfolioApp extends LitElement {
     }) as EventListener);
 
     // Initialize client-side router
-    this.router = new Router((match: RouteMatch) => {
+    this.router = new Router(async (match: RouteMatch) => {
+      // Lazy load view chunk on-demand
+      if (viewLoaders[match.page]) {
+        await viewLoaders[match.page]();
+      }
+
       this.page = match.page;
       this.params = match.params;
       this.visitedPages = new Set(this.visitedPages).add(match.page);

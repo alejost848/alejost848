@@ -6,6 +6,15 @@ export default defineConfig({
     target: 'es2022',
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'lit-vendor': ['lit', 'lit/decorators.js'],
+          'firebase-core': ['firebase/app', 'firebase/auth', 'firebase/database'],
+          'firebase-messaging': ['firebase/messaging'],
+        },
+      },
+    },
   },
   plugins: [
     VitePWA({
