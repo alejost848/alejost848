@@ -14,7 +14,7 @@ interface ThemeOption {
 const THEME_OPTIONS: ThemeOption[] = [
   { id: 'dark', label: 'Dark', icon: 'theme-dark' },
   { id: 'light', label: 'Light', icon: 'theme-light' },
-  { id: 'auto', label: 'Auto', icon: 'theme-contrast' },
+  { id: 'auto', label: 'Auto', icon: 'theme-sun-moon' },
 ];
 
 @customElement('alejost-theme-toggle')
@@ -189,7 +189,7 @@ export class AlejostThemeToggle extends LitElement {
         aria-haspopup="true"
         aria-expanded="${this.open}"
       >
-        ${renderIcon('theme-contrast', 22)}
+        ${renderIcon('theme-sun-moon', 22)}
       </button>
 
       <div
