@@ -86,87 +86,6 @@ export class AboutView extends LitElement {
         min-height: 88px;
       }
 
-      .theme-card {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .theme-segmented {
-        display: inline-flex;
-        background: rgba(128, 128, 128, 0.12);
-        padding: 3px;
-        border-radius: 20px;
-        gap: 2px;
-      }
-
-      .theme-segment-btn {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: transparent;
-        border: none;
-        color: var(--card-description-color, #aaa);
-        padding: 6px 12px;
-        border-radius: 16px;
-        font-size: 13px;
-        font-weight: 500;
-        font-family: inherit;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .theme-segment-btn:hover {
-        color: var(--card-title-color, #fff);
-      }
-
-      .theme-segment-btn.active {
-        background: var(--card-bg-color, #212121);
-        color: var(--app-accent-color, #2196f3);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-      }
-
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 44px;
-        height: 24px;
-      }
-
-      .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-
-      .slider-round {
-        position: absolute;
-        cursor: pointer;
-        inset: 0;
-        background-color: #555;
-        transition: 0.3s;
-        border-radius: 24px;
-      }
-
-      .slider-round:before {
-        position: absolute;
-        content: '';
-        height: 18px;
-        width: 18px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: 0.3s;
-        border-radius: 50%;
-      }
-
-      input:checked + .slider-round {
-        background-color: var(--app-accent-color);
-      }
-
-      input:checked + .slider-round:before {
-        transform: translateX(20px);
-      }
 
       .credits-card {
         flex-direction: row;
@@ -215,7 +134,6 @@ export class AboutView extends LitElement {
   ];
 
   @property({ type: String }) theme = 'dark';
-  @property({ type: String }) themeMode: 'dark' | 'light' | 'auto' = 'dark';
   @state() private sending = false;
   @state() private formName = '';
   @state() private formEmail = '';
@@ -227,29 +145,6 @@ export class AboutView extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.mountedAt = Date.now();
-  }
-
-  private setThemeMode(mode: 'dark' | 'light' | 'auto') {
-    this.themeMode = mode;
-    this.dispatchEvent(
-      new CustomEvent('theme-mode-changed', {
-        detail: { mode },
-        bubbles: true,
-        composed: true,
-      })
-    );
-    window.dispatchEvent(
-      new CustomEvent('theme-mode-changed', {
-        detail: { mode },
-        bubbles: true,
-        composed: true,
-      })
-    );
-  }
-
-  private toggleTheme(e: Event) {
-    const isChecked = (e.target as HTMLInputElement).checked;
-    this.setThemeMode(isChecked ? 'dark' : 'light');
   }
 
   private async handleSubmit(e: Event) {
@@ -434,43 +329,6 @@ export class AboutView extends LitElement {
       </div>
 
       <div class="cards-container">
-        <div class="card-group">
-          <div class="card theme-card">
-            <span style="font-weight: 500;">Theme</span>
-            <div class="theme-segmented" role="radiogroup" aria-label="Theme mode">
-              <button
-                type="button"
-                class="theme-segment-btn ${this.themeMode === 'dark' ? 'active' : ''}"
-                role="radio"
-                aria-checked="${this.themeMode === 'dark'}"
-                @click="${() => this.setThemeMode('dark')}"
-              >
-                ${renderIcon('theme-dark', 16)}
-                <span>Dark</span>
-              </button>
-              <button
-                type="button"
-                class="theme-segment-btn ${this.themeMode === 'light' ? 'active' : ''}"
-                role="radio"
-                aria-checked="${this.themeMode === 'light'}"
-                @click="${() => this.setThemeMode('light')}"
-              >
-                ${renderIcon('theme-light', 16)}
-                <span>Light</span>
-              </button>
-              <button
-                type="button"
-                class="theme-segment-btn ${this.themeMode === 'auto' ? 'active' : ''}"
-                role="radio"
-                aria-checked="${this.themeMode === 'auto'}"
-                @click="${() => this.setThemeMode('auto')}"
-              >
-                ${renderIcon('theme-system', 16)}
-                <span>Auto</span>
-              </button>
-            </div>
-          </div>
-        </div>
 
         <div class="card-group">
           <div class="card credits-card">

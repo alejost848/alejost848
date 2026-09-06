@@ -576,7 +576,7 @@ export class PortfolioApp extends LitElement {
           : ''}
 
         ${this.visitedPages.has('about') || this.page === 'about'
-          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}" .themeMode="${this.themeMode}"></about-view>`
+          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}"></about-view>`
           : ''}
 
         ${this.page === 'work'
