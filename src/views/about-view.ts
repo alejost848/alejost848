@@ -465,7 +465,7 @@ export class AboutView extends LitElement {
                 aria-checked="${this.themeMode === 'auto'}"
                 @click="${() => this.setThemeMode('auto')}"
               >
-                ${renderIcon('theme-auto', 16)}
+                ${renderIcon('theme-system', 16)}
                 <span>Auto</span>
               </button>
             </div>
