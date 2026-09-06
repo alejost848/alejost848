@@ -36,6 +36,29 @@ export class AboutView extends LitElement {
         flex-direction: column;
       }
 
+      #contact_card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #contact_card form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      #contact_card .form-group:has(textarea.form-input) {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #contact_card textarea.form-input {
+        flex: 1;
+        min-height: 88px;
+      }
+
       .flat-btn {
         margin-top: 24px;
         align-self: flex-start;
@@ -86,17 +109,26 @@ export class AboutView extends LitElement {
         min-height: 88px;
       }
 
-
-      .credits-card {
-        flex-direction: row;
+      .credits-footer {
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
+        text-align: center;
+        gap: 16px;
+        padding: 24px 0 16px;
+      }
+
+      .credits-copyright {
+        color: var(--card-date-color);
+        font-size: 14px;
       }
 
       .social-icons {
         display: flex;
         align-items: center;
-        gap: 8px;
+        justify-content: center;
+        gap: 12px;
       }
 
       .social-icon-btn {
@@ -123,11 +155,6 @@ export class AboutView extends LitElement {
       @media (max-width: 600px) {
         .card {
           padding: 20px;
-        }
-        .credits-card {
-          flex-direction: column;
-          gap: 16px;
-          text-align: center;
         }
       }
     `,
@@ -325,61 +352,61 @@ export class AboutView extends LitElement {
               </div>
             </form>
           </div>
-
-          <div class="card credits-card">
-            <span style="color: var(--card-date-color); font-size: 14px;">
-              © ${year} Alejandro Sanclemente
-            </span>
-            <div class="social-icons">
-              <a
-                href="https://youtube.com/alejost848"
-                target="_blank"
-                rel="noopener"
-                class="social-icon-btn"
-                title="YouTube"
-              >
-                ${renderIcon('youtube', 20)}
-              </a>
-              <a
-                href="https://github.com/alejost848"
-                target="_blank"
-                rel="noopener"
-                class="social-icon-btn"
-                title="GitHub"
-              >
-                ${renderIcon('github', 20)}
-              </a>
-              <a
-                href="https://x.com/alejost848"
-                target="_blank"
-                rel="noopener"
-                class="social-icon-btn"
-                title="X"
-              >
-                ${renderIcon('twitter', 18)}
-              </a>
-              <a
-                href="https://linkedin.com/in/alejost848"
-                target="_blank"
-                rel="noopener"
-                class="social-icon-btn"
-                title="LinkedIn"
-              >
-                ${renderIcon('linkedin', 20)}
-              </a>
-              <a
-                href="https://dribbble.com/alejost848"
-                target="_blank"
-                rel="noopener"
-                class="social-icon-btn"
-                title="Dribbble"
-              >
-                ${renderIcon('dribbble', 20)}
-              </a>
-            </div>
-          </div>
         </div>
       </div>
+
+      <footer class="credits-footer">
+        <span class="credits-copyright">
+          © ${year} Alejandro Sanclemente
+        </span>
+        <div class="social-icons">
+          <a
+            href="https://youtube.com/alejost848"
+            target="_blank"
+            rel="noopener"
+            class="social-icon-btn"
+            title="YouTube"
+          >
+            ${renderIcon('youtube', 20)}
+          </a>
+          <a
+            href="https://github.com/alejost848"
+            target="_blank"
+            rel="noopener"
+            class="social-icon-btn"
+            title="GitHub"
+          >
+            ${renderIcon('github', 20)}
+          </a>
+          <a
+            href="https://x.com/alejost848"
+            target="_blank"
+            rel="noopener"
+            class="social-icon-btn"
+            title="X"
+          >
+            ${renderIcon('twitter', 18)}
+          </a>
+          <a
+            href="https://linkedin.com/in/alejost848"
+            target="_blank"
+            rel="noopener"
+            class="social-icon-btn"
+            title="LinkedIn"
+          >
+            ${renderIcon('linkedin', 20)}
+          </a>
+          <a
+            href="https://dribbble.com/alejost848"
+            target="_blank"
+            rel="noopener"
+            class="social-icon-btn"
+            title="Dribbble"
+          >
+            ${renderIcon('dribbble', 20)}
+          </a>
+        </div>
+      </footer>
     `;
   }
 }
