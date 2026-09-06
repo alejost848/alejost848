@@ -22,6 +22,7 @@ const LOGO_RIGHT_EYE_PATH =
 // Original SVG coordinates are in a 24x24 box
 const LOGO_BOX_SIZE = 24;
 const DISPLAY_SIZE = 96; // resting size in pixels
+const TOTAL_ROWS = 24;
 
 function getTransform(scale: number, W: number, H: number): string {
   const tx = W / 2 - (LOGO_BOX_SIZE * scale) / 2;
@@ -65,6 +66,7 @@ export class AlejostIntro extends LitElement {
     const maskHole = this.renderRoot.querySelector('#mask-hole') as SVGPathElement | null;
     const logoColorGroup = this.renderRoot.querySelector('#intro-logo-color-group') as SVGGElement | null;
     const logoOuterSilhouette = this.renderRoot.querySelector('#intro-logo-silhouette') as SVGPathElement | null;
+    const pixelRows = Array.from(this.renderRoot.querySelectorAll('.pixel-row')) as SVGRectElement[];
 
     if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette) {
       this.finish();
@@ -81,82 +83,76 @@ export class AlejostIntro extends LitElement {
     bgRect.setAttribute('fill', bgColor);
 
     // Initial scale calculation
-    const initScale = DISPLAY_SIZE / LOGO_BOX_SIZE;
-    const startScale = initScale * 1.35;
-    // Massive diagonal coverage so the expanding mask hole completely clears all screen edges and ultra-wide corners
+    const restingScale = DISPLAY_SIZE / LOGO_BOX_SIZE;
+    // Massive diagonal coverage so the expanding mask hole completely clears all screen edges
     const endScale = (Math.hypot(W, H) / LOGO_BOX_SIZE) * 7.5;
 
-    const startTransform = getTransform(startScale, W, H);
-    maskHole.setAttribute('transform', startTransform);
-    logoColorGroup.setAttribute('transform', startTransform);
-    logoOuterSilhouette.setAttribute('transform', startTransform);
+    const restingTransform = getTransform(restingScale, W, H);
+    maskHole.setAttribute('transform', restingTransform);
+    logoColorGroup.setAttribute('transform', restingTransform);
+    logoOuterSilhouette.setAttribute('transform', restingTransform);
 
-    const proxyDown = { s: startScale };
-    const proxyUp = { s: initScale };
+    const proxyUp = { s: restingScale };
 
-    // Phase 1: Logo enters and gently scales down to center
-    gsap.to(proxyDown, {
-      s: initScale,
-      duration: 0.65,
-      ease: 'expo.out',
-      onUpdate: () => {
-        const t = getTransform(proxyDown.s, W, H);
-        maskHole.setAttribute('transform', t);
-        logoColorGroup.setAttribute('transform', t);
-        logoOuterSilhouette.setAttribute('transform', t);
-      },
+    // Master Timeline
+    const masterTl = gsap.timeline({
       onComplete: () => {
-        // Phase 2: Crisp pause, then the logo begins zooming in FIRST,
-        // and as it zooms, it dissolves into the mask hole seamlessly so
-        // the mask hole never appears stationary.
-        const tl = gsap.timeline({
-          delay: 0.3,
-          onComplete: () => {
-            this.finish();
-          },
-        });
-
-        tl
-          // Zoom BOTH the logo graphics and the mask hole together outward
-          .to(
-            proxyUp,
-            {
-              s: endScale,
-              duration: 0.85,
-              ease: 'expo.in',
-              onStart: () => {
-                this.dispatchEvent(new CustomEvent('intro-reveal', { bubbles: true, composed: true }));
-              },
-              onUpdate: () => {
-                const t = getTransform(proxyUp.s, W, H);
-                maskHole.setAttribute('transform', t);
-                logoColorGroup.setAttribute('transform', t);
-                logoOuterSilhouette.setAttribute('transform', t);
-              },
-            },
-            0
-          )
-          // As the zoom is already underway, fade out the face features and silhouette into the opening hole
-          .to(
-            logoColorGroup,
-            {
-              opacity: 0,
-              duration: 0.3,
-              ease: 'power2.in',
-            },
-            0.1
-          )
-          .to(
-            logoOuterSilhouette,
-            {
-              opacity: 0,
-              duration: 0.3,
-              ease: 'power2.in',
-            },
-            0.15
-          );
+        this.finish();
       },
     });
+
+    // Phase 1: Pixel row-by-row reveal from top to bottom (retro scanline / raster build)
+    masterTl.to(pixelRows, {
+      opacity: 1,
+      duration: 0.04,
+      stagger: 0.024,
+      ease: 'steps(1)',
+    });
+
+    // Phase 2: Brief pause to admire the built pixel avatar
+    masterTl.to({}, { duration: 0.25 });
+
+    // Phase 3: Zoom BOTH the logo graphics and the mask hole together outward,
+    // dissolving the avatar into the hole as it expands.
+    masterTl.to(
+      proxyUp,
+      {
+        s: endScale,
+        duration: 0.85,
+        ease: 'expo.in',
+        onStart: () => {
+          this.dispatchEvent(new CustomEvent('intro-reveal', { bubbles: true, composed: true }));
+        },
+        onUpdate: () => {
+          const t = getTransform(proxyUp.s, W, H);
+          maskHole.setAttribute('transform', t);
+          logoColorGroup.setAttribute('transform', t);
+          logoOuterSilhouette.setAttribute('transform', t);
+        },
+      },
+      '>'
+    );
+
+    // As the zoom starts, fade out the face features and silhouette into the opening hole
+    masterTl.to(
+      logoColorGroup,
+      {
+        opacity: 0,
+        duration: 0.3,
+        ease: 'power2.in',
+      },
+      '<0.1'
+    );
+
+    masterTl.to(
+      logoOuterSilhouette,
+      {
+        opacity: 0,
+        duration: 0.3,
+        ease: 'power2.in',
+      },
+      '<0.05'
+    );
   }
 
   private finish() {
@@ -165,9 +161,30 @@ export class AlejostIntro extends LitElement {
   }
 
   render() {
+    // 24 rows in 24x24 coordinate box, 1 unit per row
+    const rows = Array.from({ length: TOTAL_ROWS }, (_, i) => i);
+
     return html`
       <svg id="page-intro" xmlns="http://www.w3.org/2000/svg">
         <defs>
+          <!-- Pixel row-by-row reveal mask for the avatar -->
+          <mask id="pixel-reveal-mask">
+            ${rows.map(
+              (row) => html`
+                <rect
+                  class="pixel-row"
+                  x="0"
+                  y="${row}"
+                  width="24"
+                  height="1.05"
+                  fill="white"
+                  opacity="0"
+                ></rect>
+              `
+            )}
+          </mask>
+
+          <!-- Fullscreen mask hole through which the underlying website is revealed -->
           <mask id="intro-mask" maskUnits="userSpaceOnUse">
             <rect id="mask-cover" fill="white" x="0" y="0"></rect>
             <path id="mask-hole" fill="black" d="${LOGO_OUTER_PATH}"></path>
@@ -183,10 +200,11 @@ export class AlejostIntro extends LitElement {
           fill="#f0b003"
           d="${LOGO_OUTER_PATH}"
           opacity="1"
+          mask="url(#pixel-reveal-mask)"
         ></path>
 
-        <!-- Full color pixel avatar logo -->
-        <g id="intro-logo-color-group" opacity="1">
+        <!-- Full color pixel avatar logo, revealed row by row by #pixel-reveal-mask -->
+        <g id="intro-logo-color-group" opacity="1" mask="url(#pixel-reveal-mask)">
           <!-- Hair (#f0b003) -->
           <path fill="#f0b003" d="${LOGO_HAIR_PATH}"></path>
           <!-- Face (#fec38f) -->
