@@ -106,43 +106,23 @@ export class AlejostIntro extends LitElement {
         logoOuterSilhouette.setAttribute('transform', t);
       },
       onComplete: () => {
-        // Phase 2: Rest and settle longer so the user clearly sees the logo,
-        // then fade out the color features to reveal the hole,
-        // and zoom the mask hole aggressively past the screen bounds.
+        // Phase 2: Crisp pause, then the logo begins zooming in FIRST,
+        // and as it zooms, it dissolves into the mask hole seamlessly so
+        // the mask hole never appears stationary.
         const tl = gsap.timeline({
-          delay: 0.7,
+          delay: 0.3,
           onComplete: () => {
             this.finish();
           },
         });
 
         tl
-          // Color features (eyes, face, hair) fade out smoothly into the silhouette
-          .to(
-            logoColorGroup,
-            {
-              opacity: 0,
-              duration: 0.45,
-              ease: 'power2.in',
-            },
-            0
-          )
-          // Outer silhouette fades out as well
-          .to(
-            logoOuterSilhouette,
-            {
-              opacity: 0,
-              duration: 0.4,
-              ease: 'power2.in',
-            },
-            0.1
-          )
-          // Zoom mask hole outwards massively to reveal the whole page
+          // Zoom BOTH the logo graphics and the mask hole together outward
           .to(
             proxyUp,
             {
               s: endScale,
-              duration: 0.95,
+              duration: 0.85,
               ease: 'expo.in',
               onStart: () => {
                 this.dispatchEvent(new CustomEvent('intro-reveal', { bubbles: true, composed: true }));
@@ -150,7 +130,28 @@ export class AlejostIntro extends LitElement {
               onUpdate: () => {
                 const t = getTransform(proxyUp.s, W, H);
                 maskHole.setAttribute('transform', t);
+                logoColorGroup.setAttribute('transform', t);
+                logoOuterSilhouette.setAttribute('transform', t);
               },
+            },
+            0
+          )
+          // As the zoom is already underway, fade out the face features and silhouette into the opening hole
+          .to(
+            logoColorGroup,
+            {
+              opacity: 0,
+              duration: 0.3,
+              ease: 'power2.in',
+            },
+            0.1
+          )
+          .to(
+            logoOuterSilhouette,
+            {
+              opacity: 0,
+              duration: 0.3,
+              ease: 'power2.in',
             },
             0.15
           );
