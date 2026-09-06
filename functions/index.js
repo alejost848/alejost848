@@ -312,55 +312,83 @@ exports.handleSubscription = functions.database
   });
 
 exports.handleFormSubmit = functions.https.onRequest((req, res) => {
-  let name = req.body.name;
-  let email = req.body.email;
-  let subject = req.body.subject;
-  let message = req.body.message;
-  let recaptcha_token = req.body.recaptcha_token;
-
-  //Add CORS middleware
+  // Add CORS middleware
   cors(req, res, async () => {
     try {
-      // Check recaptcha validation with native fetch
-      const verifyResponse = await fetch('https://recaptcha.google.com/recaptcha/api/siteverify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          secret: '6Lf6xzsUAAAAALKwXNboJqVkL9MncNm4-0p6y0Oh',
-          response: recaptcha_token
-        })
-      });
-      const result = await verifyResponse.json();
+      const { name, email, subject, message, hp, ts, recaptcha_token } = req.body || {};
 
-      if (result.success) {
-        //Read email template, replace variables with handlebars and send the email
-        const templateContent = await fs.promises.readFile(path.join(__dirname, 'email.html'), 'utf8');
-        const template = handlebars.compile(templateContent);
-        const replacements = {
-          name: name,
-          email: email,
-          subject: subject,
-          message: message
-        };
-        const htmlToSend = template(replacements);
-
-        const mailOptions = {
-          from: email,
-          to: gmailEmail,
-          subject: "New form submission in alejo.st",
-          html: htmlToSend
-        };
-        await mailTransport.sendMail(mailOptions);
-        console.log("New form submission", req.body);
-
-        res.status(200).json({ message: "valid-token" });
-      } else {
-        res.status(400).json({ message: "wrong-token" });
+      // 1. Honeypot check: If the hidden honeypot field is filled, silently discard (tarpit spam bots)
+      if (hp && typeof hp === 'string' && hp.trim().length > 0) {
+        console.warn('Spam bot detected via honeypot field:', hp);
+        return res.status(200).json({ success: true, message: 'sent' });
       }
+
+      // 2. Timestamp check: Submissions within < 800ms of page render are likely automated scripts
+      if (ts && typeof ts === 'number') {
+        const timeElapsed = Date.now() - ts;
+        if (timeElapsed < 800) {
+          console.warn('Suspiciously fast submission detected (< 800ms):', timeElapsed);
+          return res.status(200).json({ success: true, message: 'sent' });
+        }
+      }
+
+      // 3. Optional reCAPTCHA verification if token is provided
+      if (recaptcha_token) {
+        try {
+          const verifyResponse = await fetch('https://recaptcha.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              secret: '6Lf6xzsUAAAAALKwXNboJqVkL9MncNm4-0p6y0Oh',
+              response: recaptcha_token
+            })
+          });
+          const result = await verifyResponse.json();
+          if (!result.success) {
+            console.warn('reCAPTCHA verification returned failure:', result);
+          }
+        } catch (captchaErr) {
+          console.warn('reCAPTCHA check error, proceeding with honeypot validation:', captchaErr);
+        }
+      }
+
+      // 4. Validate required fields
+      if (!email || !subject || !message) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+      }
+
+      // 5. Basic email format check
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(String(email).trim())) {
+        return res.status(400).json({ success: false, message: 'Invalid email address' });
+      }
+
+      // 6. Read email template and dispatch email
+      const templateContent = await fs.promises.readFile(path.join(__dirname, 'email.html'), 'utf8');
+      const template = handlebars.compile(templateContent);
+      const replacements = {
+        name: name ? String(name).trim() : 'Anonymous',
+        email: String(email).trim(),
+        subject: String(subject).trim(),
+        message: String(message).trim()
+      };
+      const htmlToSend = template(replacements);
+
+      const mailOptions = {
+        from: `"${replacements.name}" <${gmailEmail}>`,
+        replyTo: replacements.email,
+        to: gmailEmail,
+        subject: `[alejo.st] ${replacements.subject}`,
+        html: htmlToSend
+      };
+
+      await mailTransport.sendMail(mailOptions);
+      console.log('Contact form email sent successfully for:', replacements.email);
+
+      return res.status(200).json({ success: true, message: 'sent' });
     } catch (reason) {
-      res.status(400).json({ message: "error", error: String(reason) });
+      console.error('Error handling form submit:', reason);
+      return res.status(500).json({ success: false, message: 'Server error sending email', error: String(reason) });
     }
   });
 });

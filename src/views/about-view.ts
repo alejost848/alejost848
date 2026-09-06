@@ -63,22 +63,27 @@ export class AboutView extends LitElement {
       .form-input {
         background: transparent;
         border: none;
-        border-bottom: 1px solid var(--form-border-color, rgba(255, 255, 255, 0.2));
+        border-bottom: 2px solid var(--form-border-color, rgba(255, 255, 255, 0.18));
         color: var(--page-title-color);
         font-size: 16px;
         padding: 8px 0;
         outline: none;
         font-family: inherit;
-        transition: border-bottom-color 0.2s ease;
+        transition: border-bottom-color 0.25s ease, background-color 0.25s ease;
       }
 
       .form-input:focus {
         border-bottom-color: var(--app-accent-color);
       }
 
+      .form-input:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
       textarea.form-input {
         resize: vertical;
-        min-height: 80px;
+        min-height: 88px;
       }
 
       .theme-card {
@@ -181,6 +186,13 @@ export class AboutView extends LitElement {
   @state() private formEmail = '';
   @state() private formSubject = '';
   @state() private formMessage = '';
+  @state() private formHoneypot = '';
+  private mountedAt = Date.now();
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.mountedAt = Date.now();
+  }
 
   private toggleTheme(e: Event) {
     const isChecked = (e.target as HTMLInputElement).checked;
@@ -204,8 +216,18 @@ export class AboutView extends LitElement {
 
   private async handleSubmit(e: Event) {
     e.preventDefault();
-    if (!this.formEmail || !this.formSubject || !this.formMessage) {
+    const email = this.formEmail.trim();
+    const subject = this.formSubject.trim();
+    const message = this.formMessage.trim();
+
+    if (!email || !subject || !message) {
       this.toast('Please fill in all required fields.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      this.toast('Please enter a valid email address.');
       return;
     }
 
@@ -216,24 +238,31 @@ export class AboutView extends LitElement {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: this.formName,
-          email: this.formEmail,
-          subject: this.formSubject,
-          message: this.formMessage,
+          name: this.formName.trim(),
+          email,
+          subject,
+          message,
+          hp: this.formHoneypot,
+          ts: this.mountedAt,
         }),
       });
 
-      if (res.ok) {
-        this.toast('Message sent successfully!');
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
+        this.toast('Message sent! Thanks for reaching out.');
         this.formName = '';
         this.formEmail = '';
         this.formSubject = '';
         this.formMessage = '';
+        this.formHoneypot = '';
+        this.mountedAt = Date.now();
       } else {
-        this.toast('Could not send message. Please try again later.');
+        const errorMsg = data.message || 'Could not send message. Please try again later.';
+        this.toast(errorMsg);
       }
     } catch (err) {
-      this.toast('Could not send message. Please try again later.');
+      this.toast('Could not send message. Please check your connection and try again.');
     } finally {
       this.sending = false;
     }
@@ -301,6 +330,18 @@ export class AboutView extends LitElement {
             </p>
 
             <form @submit="${this.handleSubmit}">
+              <!-- Anti-bot honeypot field (hidden from human visitors) -->
+              <div style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                <input
+                  type="text"
+                  name="website"
+                  tabindex="-1"
+                  autocomplete="off"
+                  .value="${this.formHoneypot}"
+                  @input="${(e: any) => (this.formHoneypot = e.target.value)}"
+                />
+              </div>
+
               <div class="form-group">
                 <label>Name (optional)</label>
                 <input
