@@ -64,11 +64,10 @@ export class AlejostIntro extends LitElement {
     const bgRect = this.renderRoot.querySelector('#intro-bg') as SVGRectElement | null;
     const maskCover = this.renderRoot.querySelector('#mask-cover') as SVGRectElement | null;
     const maskHole = this.renderRoot.querySelector('#mask-hole') as SVGPathElement | null;
-    const logoColorGroup = this.renderRoot.querySelector('#intro-logo-color-group') as SVGGElement | null;
-    const logoOuterSilhouette = this.renderRoot.querySelector('#intro-logo-silhouette') as SVGPathElement | null;
+    const logoGroup = this.renderRoot.querySelector('#intro-logo-group') as SVGGElement | null;
     const clipRows = Array.from(this.renderRoot.querySelectorAll('.clip-row')) as SVGRectElement[];
 
-    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette || clipRows.length === 0) {
+    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoGroup || clipRows.length === 0) {
       this.finish();
       return;
     }
@@ -89,8 +88,7 @@ export class AlejostIntro extends LitElement {
 
     const restingTransform = getTransform(restingScale, W, H);
     maskHole.setAttribute('transform', restingTransform);
-    logoColorGroup.setAttribute('transform', restingTransform);
-    logoOuterSilhouette.setAttribute('transform', restingTransform);
+    logoGroup.setAttribute('transform', restingTransform);
 
     const proxyUp = { s: restingScale };
 
@@ -109,7 +107,7 @@ export class AlejostIntro extends LitElement {
       {
         attr: { width: 24 },
         duration: 0.12,
-        stagger: 0.025,
+        stagger: 0.022,
         ease: 'power1.inOut',
       }
     );
@@ -131,32 +129,21 @@ export class AlejostIntro extends LitElement {
         onUpdate: () => {
           const t = getTransform(proxyUp.s, W, H);
           maskHole.setAttribute('transform', t);
-          logoColorGroup.setAttribute('transform', t);
-          logoOuterSilhouette.setAttribute('transform', t);
+          logoGroup.setAttribute('transform', t);
         },
       },
       '>'
     );
 
-    // As the zoom starts, fade out the face features and silhouette into the opening hole
+    // As the zoom starts, fade out the logo graphics into the opening hole
     masterTl.to(
-      logoColorGroup,
+      logoGroup,
       {
         opacity: 0,
         duration: 0.3,
         ease: 'power2.in',
       },
       '<0.1'
-    );
-
-    masterTl.to(
-      logoOuterSilhouette,
-      {
-        opacity: 0,
-        duration: 0.3,
-        ease: 'power2.in',
-      },
-      '<0.05'
     );
   }
 
@@ -171,21 +158,6 @@ export class AlejostIntro extends LitElement {
     return html`
       <svg id="page-intro" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Pixel row-by-row clipPath with 24 individual row strips for stagger -->
-          <clipPath id="pixel-clip" clipPathUnits="userSpaceOnUse">
-            ${rows.map(
-              (row) => html`
-                <rect
-                  class="clip-row"
-                  x="0"
-                  y="${row}"
-                  width="0"
-                  height="1.02"
-                ></rect>
-              `
-            )}
-          </clipPath>
-
           <!-- Fullscreen mask hole through which the underlying website is revealed -->
           <mask id="intro-mask" maskUnits="userSpaceOnUse">
             <rect id="mask-cover" fill="white" x="0" y="0"></rect>
@@ -196,26 +168,35 @@ export class AlejostIntro extends LitElement {
         <!-- Solid background with mask hole through which the underlying website is revealed -->
         <rect id="intro-bg" width="100%" height="100%" mask="url(#intro-mask)"></rect>
 
-        <!-- Wrapper group with clip-path applied in 24x24 coordinate space before transforms -->
-        <!-- Base silhouette sitting over hole before zoom -->
-        <path
-          id="intro-logo-silhouette"
-          fill="#f0b003"
-          d="${LOGO_OUTER_PATH}"
-          opacity="1"
-          clip-path="url(#pixel-clip)"
-        ></path>
+        <!-- Transformed logo container with its own local coordinate clipPath -->
+        <g id="intro-logo-group">
+          <defs>
+            <clipPath id="pixel-clip" clipPathUnits="userSpaceOnUse">
+              ${rows.map(
+                (row) => html`
+                  <rect
+                    class="clip-row"
+                    x="0"
+                    y="${row}"
+                    width="0"
+                    height="1.05"
+                  ></rect>
+                `
+              )}
+            </clipPath>
+          </defs>
 
-        <!-- Full color pixel avatar logo, revealed row by row by #pixel-clip -->
-        <g id="intro-logo-color-group" opacity="1" clip-path="url(#pixel-clip)">
-          <!-- Hair (#f0b003) -->
-          <path fill="#f0b003" d="${LOGO_HAIR_PATH}"></path>
-          <!-- Face (#fec38f) -->
-          <path fill="#fec38f" d="${LOGO_FACE_PATH}"></path>
-          <!-- Left Eye (#352419) -->
-          <path fill="#352419" d="${LOGO_LEFT_EYE_PATH}"></path>
-          <!-- Right Eye (#352419) -->
-          <path fill="#352419" d="${LOGO_RIGHT_EYE_PATH}"></path>
+          <!-- Full color pixel avatar logo, clipped row by row in its own local 24x24 space -->
+          <g clip-path="url(#pixel-clip)">
+            <!-- Hair (#f0b003) -->
+            <path fill="#f0b003" d="${LOGO_HAIR_PATH}"></path>
+            <!-- Face (#fec38f) -->
+            <path fill="#fec38f" d="${LOGO_FACE_PATH}"></path>
+            <!-- Left Eye (#352419) -->
+            <path fill="#352419" d="${LOGO_LEFT_EYE_PATH}"></path>
+            <!-- Right Eye (#352419) -->
+            <path fill="#352419" d="${LOGO_RIGHT_EYE_PATH}"></path>
+          </g>
         </g>
       </svg>
     `;
