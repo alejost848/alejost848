@@ -26,7 +26,13 @@ Thumbs.db
 *.swp
 *.swo
 
-# Environment variables
+# Environment variables & Credentials
 .env
 .env.local
 .runtimeconfig.json
+*.pem
+*.key
+*service-account*.json
+*serviceAccount*.json
+*-credentials*.json
+gha-creds-*.json

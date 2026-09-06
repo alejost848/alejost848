@@ -340,27 +340,7 @@ exports.handleFormSubmit = functions.https.onRequest((req, res) => {
         }
       }
 
-      // 3. Optional reCAPTCHA verification if token is provided
-      if (recaptcha_token) {
-        try {
-          const verifyResponse = await fetch('https://recaptcha.google.com/recaptcha/api/siteverify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-              secret: '6Lf6xzsUAAAAALKwXNboJqVkL9MncNm4-0p6y0Oh',
-              response: recaptcha_token
-            })
-          });
-          const result = await verifyResponse.json();
-          if (!result.success) {
-            console.warn('reCAPTCHA verification returned failure:', result);
-          }
-        } catch (captchaErr) {
-          console.warn('reCAPTCHA check error, proceeding with honeypot validation:', captchaErr);
-        }
-      }
-
-      // 4. Validate required fields
+      // 3. Validate required fields
       if (!email || !subject || !message) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
       }
