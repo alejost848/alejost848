@@ -6,6 +6,11 @@ import '../components/alejost-slider.js';
 import '../components/alejost-module.js';
 import '../components/alejost-card.js';
 
+// Module-level in-memory cache so home data is preserved across page navigations
+let cachedSlider: any[] | null = null;
+let cachedWorks: any[] | null = null;
+let cachedTutorials: any[] | null = null;
+
 @customElement('home-view')
 export class HomeView extends LitElement {
   static styles = [
@@ -18,12 +23,12 @@ export class HomeView extends LitElement {
     `,
   ];
 
-  @state() private slider: any[] = [];
-  @state() private works: any[] = [];
-  @state() private tutorials: any[] = [];
-  @state() private loadingSlider = true;
-  @state() private loadingWorks = true;
-  @state() private loadingTutorials = true;
+  @state() private slider: any[] = cachedSlider || [];
+  @state() private works: any[] = cachedWorks || [];
+  @state() private tutorials: any[] = cachedTutorials || [];
+  @state() private loadingSlider = !cachedSlider;
+  @state() private loadingWorks = !cachedWorks;
+  @state() private loadingTutorials = !cachedTutorials;
 
   private unsubscribes: Array<() => void> = [];
 
@@ -43,7 +48,9 @@ export class HomeView extends LitElement {
     const unsubSlider = subscribeToPath('/home/slider', (data) => {
       this.loadingSlider = false;
       if (data) {
-        this.slider = Array.isArray(data) ? data : Object.values(data);
+        const list = Array.isArray(data) ? data : Object.values(data);
+        this.slider = list;
+        cachedSlider = list;
       }
     });
     this.unsubscribes.push(unsubSlider);
@@ -59,7 +66,9 @@ export class HomeView extends LitElement {
             key,
           }));
           list.sort((a, b) => (b.publishedDate || 0) - (a.publishedDate || 0));
-          this.works = list.slice(0, 4);
+          const topWorks = list.slice(0, 4);
+          this.works = topWorks;
+          cachedWorks = topWorks;
         }
       },
       { orderByChild: 'publishedDate', limitToLast: 4 }
@@ -77,7 +86,9 @@ export class HomeView extends LitElement {
             key,
           }));
           list.sort((a, b) => (b.publishedDate || 0) - (a.publishedDate || 0));
-          this.tutorials = list.slice(0, 4);
+          const topTutorials = list.slice(0, 4);
+          this.tutorials = topTutorials;
+          cachedTutorials = topTutorials;
         }
       },
       { orderByChild: 'publishedDate', limitToLast: 4 }

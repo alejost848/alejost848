@@ -205,6 +205,22 @@ export class AlejostCard extends LitElement {
   @property({ type: Boolean, reflect: true }) skeleton = false;
   @state() private imageLoaded = false;
 
+  firstUpdated() {
+    this.checkImageLoaded();
+  }
+
+  updated() {
+    this.checkImageLoaded();
+  }
+
+  private checkImageLoaded() {
+    if (this.imageLoaded) return;
+    const img = this.renderRoot?.querySelector('.card-image') as HTMLImageElement | null;
+    if (img && img.complete && img.naturalWidth > 0) {
+      this.imageLoaded = true;
+    }
+  }
+
   render() {
     if (this.skeleton || !this.data) {
       return html`

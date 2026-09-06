@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { singleViewStyles } from '../styles/single-view-styles.js';
-import { fetchPathOnce } from '../services/firebase.js';
+import { fetchPathOnce, getCachedPath } from '../services/firebase.js';
 import { updateSeo } from '../services/seo.js';
 import { formatTimeAgo } from '../components/alejost-card.js';
 import '../components/alejost-progress.js';
@@ -134,9 +134,55 @@ export class TutorialView extends LitElement {
     }
   }
 
+  private applyTutorialData(tutorial: any) {
+    if (!tutorial) return;
+    const title = tutorial.title ? `${tutorial.title} - Alejandro Sanclemente` : 'Tutorial - Alejandro Sanclemente';
+    const description = tutorial.shortDescription || tutorial.description || 'Motion design tutorial by Alejandro Sanclemente.';
+    const thumbnailUrl = tutorial.thumbnail || (tutorial.videoId ? `https://i.ytimg.com/vi/${tutorial.videoId}/maxresdefault.jpg` : `${window.location.origin}/images/cover.png`);
+    const videoUrl = tutorial.videoId ? `https://www.youtube.com/watch?v=${tutorial.videoId}` : `${window.location.origin}/tutorial/${this.series}/${this.slug}`;
+
+    updateSeo({
+      title,
+      description,
+      image: thumbnailUrl,
+      url: `${window.location.origin}/tutorial/${this.series}/${this.slug}`,
+      type: 'video.other',
+      schema: {
+        '@context': 'https://schema.org',
+        '@type': 'VideoObject',
+        name: tutorial.title || '',
+        description,
+        thumbnailUrl: [thumbnailUrl],
+        uploadDate: tutorial.publishedDate ? new Date(tutorial.publishedDate).toISOString() : new Date().toISOString(),
+        contentUrl: videoUrl,
+        embedUrl: tutorial.videoId ? `https://www.youtube.com/embed/${tutorial.videoId}` : undefined,
+      },
+    });
+
+    if (tutorial.mainColor) {
+      this.setMainColor(tutorial.mainColor);
+    } else if (tutorial.thumbnail) {
+      extractDominantColor(tutorial.thumbnail).then((color) => {
+        this.setMainColor(color);
+      });
+    }
+  }
+
   private async loadTutorial() {
     if (!this.series || !this.slug) return;
-    this.loading = true;
+    const cachedVideos = getCachedPath<any>(`/tutorials/${this.series}/videos`);
+    if (cachedVideos) {
+      const match = Object.values(cachedVideos).find(
+        (v: any) => v.slug === this.slug || v.key === this.slug
+      );
+      if (match) {
+        this.tutorial = match;
+        this.loading = false;
+        this.applyTutorialData(match);
+      }
+    } else {
+      this.loading = true;
+    }
 
     const videos = await fetchPathOnce(`/tutorials/${this.series}/videos`);
     if (videos) {
@@ -145,36 +191,7 @@ export class TutorialView extends LitElement {
       );
       this.tutorial = match || null;
       if (this.tutorial) {
-        const title = this.tutorial.title ? `${this.tutorial.title} - Alejandro Sanclemente` : 'Tutorial - Alejandro Sanclemente';
-        const description = this.tutorial.shortDescription || this.tutorial.description || 'Motion design tutorial by Alejandro Sanclemente.';
-        const thumbnailUrl = this.tutorial.thumbnail || (this.tutorial.videoId ? `https://i.ytimg.com/vi/${this.tutorial.videoId}/maxresdefault.jpg` : `${window.location.origin}/images/cover.png`);
-        const videoUrl = this.tutorial.videoId ? `https://www.youtube.com/watch?v=${this.tutorial.videoId}` : `${window.location.origin}/tutorial/${this.series}/${this.slug}`;
-
-        updateSeo({
-          title,
-          description,
-          image: thumbnailUrl,
-          url: `${window.location.origin}/tutorial/${this.series}/${this.slug}`,
-          type: 'video.other',
-          schema: {
-            '@context': 'https://schema.org',
-            '@type': 'VideoObject',
-            name: this.tutorial.title || '',
-            description,
-            thumbnailUrl: [thumbnailUrl],
-            uploadDate: this.tutorial.publishedDate ? new Date(this.tutorial.publishedDate).toISOString() : new Date().toISOString(),
-            contentUrl: videoUrl,
-            embedUrl: this.tutorial.videoId ? `https://www.youtube.com/embed/${this.tutorial.videoId}` : undefined,
-          },
-        });
-
-        if (this.tutorial.mainColor) {
-          this.setMainColor(this.tutorial.mainColor);
-        } else if (this.tutorial.thumbnail) {
-          extractDominantColor(this.tutorial.thumbnail).then((color) => {
-            this.setMainColor(color);
-          });
-        }
+        this.applyTutorialData(this.tutorial);
       }
     } else {
       this.tutorial = null;

@@ -5,6 +5,9 @@ import { subscribeToPath } from '../services/firebase.js';
 import '../components/alejost-module.js';
 import '../components/alejost-card.js';
 
+// Module-level in-memory cache so series list is preserved across navigations
+let cachedSeriesList: any[] | null = null;
+
 @customElement('tutorials-view')
 export class TutorialsView extends LitElement {
   static styles = [
@@ -17,8 +20,8 @@ export class TutorialsView extends LitElement {
     `,
   ];
 
-  @state() private seriesList: any[] = [];
-  @state() private loading = true;
+  @state() private seriesList: any[] = cachedSeriesList || [];
+  @state() private loading = !cachedSeriesList;
   private unsubscribe: (() => void) | null = null;
 
   connectedCallback() {
@@ -26,10 +29,12 @@ export class TutorialsView extends LitElement {
     this.unsubscribe = subscribeToPath('/tutorials', (data) => {
       this.loading = false;
       if (data) {
-        this.seriesList = Object.entries(data).map(([key, val]: [string, any]) => ({
+        const list = Object.entries(data).map(([key, val]: [string, any]) => ({
           ...val,
           key,
         }));
+        this.seriesList = list;
+        cachedSeriesList = list;
       }
     });
   }
