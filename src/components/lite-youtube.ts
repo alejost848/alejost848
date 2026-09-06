@@ -113,6 +113,8 @@ export class LiteYouTube extends LitElement {
   private player: any = null;
   private progressTimer: number | null = null;
   private pendingSeek: number | null = null;
+  private playerState: number = -1;
+  private isMuted: boolean = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -120,11 +122,13 @@ export class LiteYouTube extends LitElement {
       this.activated = true;
     }
     window.addEventListener('message', this.handleWindowMessage);
+    window.addEventListener('keydown', this.handleKeyDown);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('message', this.handleWindowMessage);
+    window.removeEventListener('keydown', this.handleKeyDown);
     this.stopProgressTracking();
     if (this.player && typeof this.player.destroy === 'function') {
       try {
@@ -175,7 +179,25 @@ export class LiteYouTube extends LitElement {
     }
   }
 
+  public play() {
+    if (!this.activated) {
+      this.activateVideo();
+      return;
+    }
+    this.playerState = 1;
+    if (this.player && typeof this.player.playVideo === 'function') {
+      this.player.playVideo();
+    } else {
+      const iframe = this.renderRoot.querySelector('iframe');
+      iframe?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+        '*'
+      );
+    }
+  }
+
   public pause() {
+    this.playerState = 2;
     if (this.player && typeof this.player.pauseVideo === 'function') {
       this.player.pauseVideo();
     } else {
@@ -186,6 +208,82 @@ export class LiteYouTube extends LitElement {
       );
     }
   }
+
+  public togglePlay() {
+    const isPlaying = this.player?.getPlayerState?.() === 1 || this.playerState === 1;
+    if (isPlaying) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+
+  public seekBy(seconds: number) {
+    const maxDuration = this.duration > 0 ? this.duration : Infinity;
+    const target = Math.max(0, Math.min(this.currentTime + seconds, maxDuration));
+    this.seekTo(target);
+  }
+
+  public toggleMute() {
+    if (this.player && typeof this.player.isMuted === 'function') {
+      if (this.player.isMuted()) {
+        this.player.unMute();
+        this.isMuted = false;
+      } else {
+        this.player.mute();
+        this.isMuted = true;
+      }
+    } else {
+      this.isMuted = !this.isMuted;
+      const iframe = this.renderRoot.querySelector('iframe');
+      iframe?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: this.isMuted ? 'mute' : 'unMute', args: [] }),
+        '*'
+      );
+    }
+  }
+
+  private handleKeyDown = (e: KeyboardEvent) => {
+    if (!this.activated || !this.isConnected) return;
+    if (typeof this.checkVisibility === 'function') {
+      if (!this.checkVisibility()) return;
+    } else if (this.offsetParent === null && this.offsetWidth === 0) {
+      return;
+    }
+
+    const path = e.composedPath?.() || [];
+    const target = (path[0] || e.target) as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable)
+    ) {
+      return;
+    }
+
+    switch (e.code) {
+      case 'Space':
+      case 'KeyK':
+        e.preventDefault();
+        this.togglePlay();
+        break;
+      case 'ArrowLeft':
+      case 'KeyJ':
+        e.preventDefault();
+        this.seekBy(-5);
+        break;
+      case 'ArrowRight':
+      case 'KeyL':
+        e.preventDefault();
+        this.seekBy(5);
+        break;
+      case 'KeyM':
+        e.preventDefault();
+        this.toggleMute();
+        break;
+    }
+  };
 
   private initPlayer() {
     loadYouTubeApi().then(() => {
@@ -202,6 +300,7 @@ export class LiteYouTube extends LitElement {
               }
             },
             onStateChange: (event: any) => {
+              this.playerState = event.data;
               // 1 = PLAYING, 2 = PAUSED, 0 = ENDED
               if (event.data === 1) {
                 this.startProgressTracking();
@@ -308,6 +407,7 @@ export class LiteYouTube extends LitElement {
           this.currentTime = data.info.currentTime;
         }
         if (typeof data.info.playerState === 'number') {
+          this.playerState = data.info.playerState;
           // 1 = PLAYING, 2 = PAUSED, 0 = ENDED
           if (data.info.playerState === 1) {
             this.startProgressTracking();
@@ -322,6 +422,9 @@ export class LiteYouTube extends LitElement {
           this.emitProgress(this.currentTime, this.duration);
         }
       } else if (data.event === 'onStateChange') {
+        if (typeof data.info === 'number') {
+          this.playerState = data.info;
+        }
         if (data.info === 1) {
           this.startProgressTracking();
         } else {

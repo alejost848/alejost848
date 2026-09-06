@@ -52,6 +52,8 @@ export class PortfolioApp extends LitElement {
         --progress-transition-timing-function: cubic-bezier(0.65, 0, 0.07, 1);
         background-color: var(--progress-color, #333333);
         transition: background-color 0.8s ease;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0) 100%);
+        -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0) 100%);
         z-index: 0;
         pointer-events: none;
       }
