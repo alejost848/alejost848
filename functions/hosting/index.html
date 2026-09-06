@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes" />
+
+    <title>Alejandro Sanclemente - Motion Designer and PWA Developer</title>
+    <meta
+      name="description"
+      content="Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development."
+    />
+
+    <base href="/" />
+
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="theme-color" content="#191919" />
+
+    <!-- iOS and PWA Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Alejandro Sanclemente" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Alejandro Sanclemente" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Alejandro Sanclemente - Motion Designer and PWA Developer" />
+    <meta
+      property="og:description"
+      content="Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development."
+    />
+    <meta property="og:image" content="/images/cover.png" />
+
+    <!-- Google Fonts: Google Sans Flex -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Global Styles -->
+    <style>
+      :root {
+        /* Dark theme defaults — overridden by applyTheme() JS */
+        --app-background-color: #191919;
+        --app-accent-color: #2196f3;
+        --card-bg-color: #212121;
+        --card-image-bg-color: #1e1e1e;
+        --card-title-color: #f4f4f4;
+        --card-description-color: #aaaaaa;
+        --card-date-color: #606060;
+        --page-title-color: #ffffff;
+        --module-title-color: #eeeeee;
+        --header-color: #ffffff;
+        --bottom-nav-bg-color: #212121;
+        --bottom-nav-item-color: #999999;
+        --chip-background-color: rgba(255, 255, 255, 0.05);
+        --chip-color: rgba(255, 255, 255, 0.8);
+        --toast-bg-color: #323232;
+        --toast-color: #f4f4f4;
+        --form-border-color: rgba(255, 255, 255, 0.2);
+        --form-border-focus-color: rgba(255, 255, 255, 0.6);
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        line-height: 1.5;
+        min-width: 100%;
+        min-height: 100vh;
+        background-color: var(--app-background-color);
+        color: #f4f4f4;
+        overflow-x: hidden;
+        overflow-y: scroll;
+        transition: background-color 0.2s cubic-bezier(0.4, 0, 1, 1);
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* View Transitions */
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 250ms;
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-DdqwqIQJ.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/lit-vendor-WhmF4EbZ.js">
+    <link rel="modulepreload" crossorigin href="/assets/firebase-core-OgjNzKNV.js">
+    <link rel="modulepreload" crossorigin href="/assets/firebase-messaging-CLqM9RSI.js">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <portfolio-app></portfolio-app>
+
+    <noscript>
+      Please enable JavaScript to view this website.
+    </noscript>
+
+  </body>
+</html>

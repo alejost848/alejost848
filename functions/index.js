@@ -18,8 +18,9 @@ const gcs = new Storage();
 
 admin.initializeApp();
 
-const gmailEmail = functions.config().gmail.email;
-const gmailPassword = functions.config().gmail.password;
+const config = typeof functions.config === 'function' ? functions.config() : {};
+const gmailEmail = (config.gmail && config.gmail.email) || process.env.GMAIL_EMAIL || '';
+const gmailPassword = (config.gmail && config.gmail.password) || process.env.GMAIL_PASSWORD || '';
 const mailTransport = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -242,25 +243,40 @@ function getUpdatedObject(work) {
 
 exports.sendNotification = functions.database
   .ref('/dashboard/notifications/{key}')
-  .onCreate((snap, context) => {
+  .onCreate(async (snap, context) => {
     const notification = snap.val();
-    const payload = {
+    if (!notification) return null;
+
+    const message = {
+      topic: 'all',
       notification: {
-        title: notification.title,
-        body: notification.body,
-        icon: notification.icon,
-        click_action: notification.click_action
-      }
+        title: notification.title || 'Alejandro Sanclemente',
+        body: notification.body || '',
+      },
+      webpush: {
+        notification: {
+          icon: notification.icon || '/images/manifest/icon-192x192.png',
+          badge: '/images/manifest/icon-72x72.png',
+        },
+        fcmOptions: {
+          link: notification.click_action || 'https://alejo.st',
+        },
+      },
     };
-    return admin.messaging().sendToTopic('/topics/all', payload)
-      .then(() => {
-        console.log(`Notification sent: "${notification.title}".`);
-      });
+
+    try {
+      const response = await admin.messaging().send(message);
+      console.log(`Notification successfully sent to topic 'all': "${notification.title}". ID: ${response}`);
+      return response;
+    } catch (error) {
+      console.error('Error sending notification via FCM v1:', error);
+      return null;
+    }
   });
 
 exports.handleSubscription = functions.database
   .ref('/users/{uid}')
-  .onWrite((change, context) => {
+  .onWrite(async (change, context) => {
     const uid = context.params.uid;
 
     // If we are deleting the user stop doing stuff
@@ -272,43 +288,35 @@ exports.handleSubscription = functions.database
     const userToken = change.after.val().token;
     const subscribed = change.after.val().subscribed;
 
-    //If token or subscribed values are not present stop
-    if (userToken == null || subscribed == null) {
+    // If token or subscribed values are not present stop
+    if (!userToken || typeof subscribed !== 'boolean') {
       return null;
     }
 
     const subscriptions = admin.database().ref('dashboard/overview/subscriptions');
 
-    if (subscribed) {
-      return admin.messaging().subscribeToTopic(userToken, '/topics/all').then(response => {
-        if (response.errors.length > 0) {
-          console.log("Errors subscribing to topic", response.errors);
+    try {
+      if (subscribed) {
+        const response = await admin.messaging().subscribeToTopic(userToken, 'all');
+        if (response.errors && response.errors.length > 0) {
+          console.error("Errors subscribing to topic 'all':", response.errors);
         } else {
-          console.log("Successfully subscribed to topic", response);
-          return subscriptions.transaction(number => {
-            return number + 1;
-          });
+          console.log(`User ${uid} successfully subscribed to topic 'all'`, response);
+          await subscriptions.transaction(number => (number || 0) + 1);
         }
-      }).catch(function(error) {
-        console.log("Error subscribing to topic:", error);
-        return null;
-      });
-    } else {
-      return admin.messaging().unsubscribeFromTopic(userToken, '/topics/all').then(response => {
-        if (response.errors.length > 0) {
-          console.log("Errors unsubscribing from topic", response.errors);
+      } else {
+        const response = await admin.messaging().unsubscribeFromTopic(userToken, 'all');
+        if (response.errors && response.errors.length > 0) {
+          console.error("Errors unsubscribing from topic 'all':", response.errors);
         } else {
-          console.log("Successfully unsubscribed from topic", response);
-          return subscriptions.transaction(number => {
-            return number - 1;
-          });
+          console.log(`User ${uid} successfully unsubscribed from topic 'all'`, response);
+          await subscriptions.transaction(number => Math.max(0, (number || 0) - 1));
         }
-      }).catch(function(error) {
-        console.log("Error unsubscribing from topic:", error);
-        return null;
-      });
+      }
+    } catch (error) {
+      console.error("Error managing subscription to topic 'all':", error);
     }
-
+    return null;
   });
 
 exports.handleFormSubmit = functions.https.onRequest((req, res) => {
@@ -439,102 +447,207 @@ exports.handleImagesDeletion = functions.storage.object().onDelete((object, cont
   }
 });
 
-exports.host = functions.https.onRequest((req, res) => {
+const BOT_USER_AGENTS = [
+  'googlebot',
+  'bingbot',
+  'yandex',
+  'baiduspider',
+  'facebookexternalhit',
+  'twitterbot',
+  'rogerbot',
+  'linkedinbot',
+  'embedly',
+  'quora link preview',
+  'showyoubot',
+  'outbrain',
+  'pinterest',
+  'slackbot',
+  'vkshare',
+  'w3c_validator',
+  'whatsapp',
+  'telegrambot',
+  'discordbot',
+  'applebot'
+];
 
-  const userAgent = req.headers['user-agent'].toLowerCase();
-  const path = req.path.split("/");
+let cachedIndexHtml = null;
 
-  const isBot = userAgent.includes('yahoou') ||
-		userAgent.includes('bingbot') ||
-		userAgent.includes('baiduspider') ||
-		userAgent.includes('yandex') ||
-		userAgent.includes('yeti') ||
-		userAgent.includes('yodaobot') ||
-		userAgent.includes('gigabot') ||
-		userAgent.includes('ia_archiver') ||
-		userAgent.includes('facebookexternalhit') ||
-		userAgent.includes('twitterbot') ||
-		userAgent.includes('slackbot') ||
-		userAgent.includes('developers\.google\.com') ? true : false;
+function getIndexHtmlTemplate() {
+  if (cachedIndexHtml) return cachedIndexHtml;
 
-  //If the userAgent is a bot then render the tags for it
-  if (isBot){
-    let view = path[1];
-    //Get data from database to construct the meta tags
-    if (view == "work") {
-      let slug = path[2];
+  const candidatePaths = [
+    path.join(__dirname, 'hosting/index.html'),
+    path.join(__dirname, '../dist/index.html'),
+    path.join(__dirname, 'index.html'),
+  ];
 
-      admin.database().ref(`works/${slug}`).once('value', (snapshot) => {
-        const item = snapshot.val();
-        let tags = {
-          "title": `${item.title} - Alejandro Sanclemente`,
-          "og:title": `${item.title} - Alejandro Sanclemente`,
-          "description": item.shortDescription,
-          "og:description": item.shortDescription,
-          "og:type": "article",
-          "og:image": item.videoId ? `https://i.ytimg.com/vi/${item.videoId}/maxresdefault.jpg` : item.coverImage.downloadUrl,
-          "og:url": `https://alejo.st${req.path}`
-        };
-        res.status(200).send(generateMetaTags(tags));
-      });
-    } else if (view == "tutorial") {
-      let seriesName = path[2];
-      let tutorialSlug = path[3];
-
-      admin.database().ref(`tutorials/${seriesName}/videos/`)
-        .orderByChild("slug")
-        .equalTo(tutorialSlug)
-        .once('child_added', (snapshot) => {
-          const item = snapshot.val();
-          let tags = {
-            "title": `${item.title} - Alejandro Sanclemente`,
-            "og:title": `${item.title} - Alejandro Sanclemente`,
-            "description": item.shortDescription,
-            "og:description": item.shortDescription,
-            "og:type": "article",
-            "og:image": item.videoId ? `https://i.ytimg.com/vi/${item.videoId}/maxresdefault.jpg` : item.coverImage.downloadUrl,
-            "og:url": `https://alejo.st${req.path}`
-          };
-          res.status(200).send(generateMetaTags(tags));
-        });
-    } else {
-      //All other views
-      let tags = {
-        "title": "Alejandro Sanclemente - Motion Designer and PWA Developer",
-        "og:title": "Alejandro Sanclemente - Motion Designer and PWA Developer",
-        "description": "Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and development of Progressive Web Apps using Polymer and Firebase.",
-        "og:description": "Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and development of Progressive Web Apps using Polymer and Firebase.",
-        "og:type": "website",
-        "og:image": "https://alejo.st/images/cover.png",
-        "og:url": `https://alejo.st${req.path}`
-      };
-      res.status(200).send(generateMetaTags(tags));
-    }
-  } else {
-    //If it's not a bot, send the index file untouched
-    const indexPath = fs.existsSync(path.join(__dirname, '../dist/index.html'))
-      ? path.join(__dirname, '../dist/index.html')
-      : fs.existsSync(path.join(__dirname, './hosting/index.html'))
-        ? path.join(__dirname, './hosting/index.html')
-        : './hosting/index.html';
-    res.status(200).send(fs.readFileSync(indexPath, 'utf8'));
-  }
-});
-
-function generateMetaTags(tags){
-  let tagsString = '';
-  for (var key in tags) {
-    if (tags.hasOwnProperty(key)) {
-      //Title is a special case
-      if (key == 'title') {
-        tagsString += `<title>${tags[key]}</title>`;
-      } else {
-        // Check if it's Open Graph or regular meta tags to correctly set the attribute
-        const attribute = key.substring(0, 3) === 'og:' ? 'property' : 'name';
-        let escapedString = tags[key].replace(/\"/g,'&quot;');
-        tagsString += `<meta ${attribute}="${key}" content="${escapedString}"/>`;
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        cachedIndexHtml = fs.readFileSync(p, 'utf8');
+        return cachedIndexHtml;
+      } catch (e) {
+        console.warn('Error reading HTML template at', p, e);
       }
     }
   }
-	return tagsString;
+
+  // Resilient fallback HTML shell
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes" />
+    <title>Alejandro Sanclemente - Motion Designer and PWA Developer</title>
+    <meta name="description" content="Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development." />
+    <base href="/" />
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body>
+    <portfolio-app></portfolio-app>
+    <script type="module" src="/src/app.ts"></script>
+  </body>
+</html>`;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function injectMetaIntoHtml(html, tags) {
+  let modified = html;
+
+  if (tags.title) {
+    modified = modified.replace(/<title>.*?<\/title>/i, `<title>${escapeHtml(tags.title)}</title>`);
+  }
+
+  const metaElements = [];
+  if (tags.description) {
+    metaElements.push(`<meta name="description" content="${escapeHtml(tags.description)}" />`);
+  }
+  if (tags['og:title']) {
+    metaElements.push(`<meta property="og:title" content="${escapeHtml(tags['og:title'])}" />`);
+  }
+  if (tags['og:description']) {
+    metaElements.push(`<meta property="og:description" content="${escapeHtml(tags['og:description'])}" />`);
+  }
+  if (tags['og:type']) {
+    metaElements.push(`<meta property="og:type" content="${escapeHtml(tags['og:type'])}" />`);
+  }
+  if (tags['og:image']) {
+    metaElements.push(`<meta property="og:image" content="${escapeHtml(tags['og:image'])}" />`);
+    metaElements.push(`<meta name="twitter:image" content="${escapeHtml(tags['og:image'])}" />`);
+  }
+  if (tags['og:url']) {
+    metaElements.push(`<meta property="og:url" content="${escapeHtml(tags['og:url'])}" />`);
+  }
+  metaElements.push(`<meta name="twitter:card" content="summary_large_image" />`);
+  metaElements.push(`<meta name="twitter:site" content="@alejost848" />`);
+
+  // Remove previous description and og meta tags to prevent duplication
+  modified = modified
+    .replace(/<meta\s+name=["']description["'][^>]*>/gi, '')
+    .replace(/<meta\s+property=["']og:[^"']+["'][^>]*>/gi, '')
+    .replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>/gi, '');
+
+  const injected = metaElements.join('\n    ');
+  return modified.replace(/<\/head>/i, `    ${injected}\n  </head>`);
+}
+
+const DEFAULT_METADATA = {
+  title: 'Alejandro Sanclemente - Motion Designer and PWA Developer',
+  'og:title': 'Alejandro Sanclemente - Motion Designer and PWA Developer',
+  description: 'Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development.',
+  'og:description': 'Interactive Media Designer based in Tuluá, Colombia. I specialize in motion design, UX design and web development.',
+  'og:type': 'website',
+  'og:image': 'https://alejo.st/images/cover.png',
 };
+
+async function getMetadataForRoute(reqPath) {
+  const segments = reqPath.split('/').filter(Boolean);
+  const view = segments[0];
+
+  if (view === 'work' && segments[1]) {
+    const slug = segments[1];
+    try {
+      const snap = await Promise.race([
+        admin.database().ref(`works/${slug}`).once('value'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2500))
+      ]);
+      const item = snap.val();
+      if (item) {
+        return {
+          title: `${item.title} - Alejandro Sanclemente`,
+          'og:title': `${item.title} - Alejandro Sanclemente`,
+          description: item.shortDescription || item.description || DEFAULT_METADATA.description,
+          'og:description': item.shortDescription || item.description || DEFAULT_METADATA.description,
+          'og:type': 'article',
+          'og:image': item.videoId ? `https://i.ytimg.com/vi/${item.videoId}/maxresdefault.jpg` : (item.coverImage?.downloadUrl || DEFAULT_METADATA['og:image']),
+          'og:url': `https://alejo.st${reqPath}`,
+        };
+      }
+    } catch (err) {
+      console.warn('Error fetching work metadata:', slug, err.message);
+    }
+  } else if (view === 'tutorial' && segments[1] && segments[2]) {
+    const seriesName = segments[1];
+    const tutorialSlug = segments[2];
+    try {
+      const snap = await Promise.race([
+        admin.database().ref(`tutorials/${seriesName}/videos/`).orderByChild('slug').equalTo(tutorialSlug).once('value'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2500))
+      ]);
+      const val = snap.val();
+      if (val) {
+        const item = Object.values(val)[0];
+        if (item) {
+          return {
+            title: `${item.title} - Alejandro Sanclemente`,
+            'og:title': `${item.title} - Alejandro Sanclemente`,
+            description: item.shortDescription || item.description || DEFAULT_METADATA.description,
+            'og:description': item.shortDescription || item.description || DEFAULT_METADATA.description,
+            'og:type': 'article',
+            'og:image': item.videoId ? `https://i.ytimg.com/vi/${item.videoId}/maxresdefault.jpg` : (item.coverImage?.downloadUrl || DEFAULT_METADATA['og:image']),
+            'og:url': `https://alejo.st${reqPath}`,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching tutorial metadata:', tutorialSlug, err.message);
+    }
+  }
+
+  return {
+    ...DEFAULT_METADATA,
+    'og:url': `https://alejo.st${reqPath}`,
+  };
+}
+
+exports.host = functions.https.onRequest(async (req, res) => {
+  const baseHtml = getIndexHtmlTemplate();
+
+  // Edge cache for 1 hour, browser for 5 minutes
+  res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+
+  const segments = req.path.split('/').filter(Boolean);
+  const isSingleView = segments[0] === 'work' || segments[0] === 'tutorial';
+
+  if (!isSingleView) {
+    return res.status(200).type('html').send(baseHtml);
+  }
+
+  try {
+    const tags = await getMetadataForRoute(req.path);
+    const renderedHtml = injectMetaIntoHtml(baseHtml, tags);
+    return res.status(200).type('html').send(renderedHtml);
+  } catch (error) {
+    console.error('Error in host function:', error);
+    return res.status(200).type('html').send(baseHtml);
+  }
+});
