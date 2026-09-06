@@ -66,9 +66,9 @@ export class AlejostIntro extends LitElement {
     const maskHole = this.renderRoot.querySelector('#mask-hole') as SVGPathElement | null;
     const logoColorGroup = this.renderRoot.querySelector('#intro-logo-color-group') as SVGGElement | null;
     const logoOuterSilhouette = this.renderRoot.querySelector('#intro-logo-silhouette') as SVGPathElement | null;
-    const clipRect = this.renderRoot.querySelector('#pixel-clip-rect') as SVGRectElement | null;
+    const clipRows = Array.from(this.renderRoot.querySelectorAll('.pixel-clip-row')) as SVGRectElement[];
 
-    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette || !clipRect) {
+    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette || clipRows.length === 0) {
       this.finish();
       return;
     }
@@ -93,7 +93,7 @@ export class AlejostIntro extends LitElement {
     logoOuterSilhouette.setAttribute('transform', restingTransform);
 
     const proxyUp = { s: restingScale };
-    const scanProxy = { h: 0 };
+    const rowProxies = clipRows.map((rect) => ({ w: 0, rect }));
 
     // Master Timeline
     const masterTl = gsap.timeline({
@@ -102,15 +102,26 @@ export class AlejostIntro extends LitElement {
       },
     });
 
-    // Phase 1: Pixel row-by-row reveal from top to bottom (retro scanline / raster build)
-    // 24 discrete rows revealed one by one
-    masterTl.to(scanProxy, {
-      h: 24,
-      duration: 0.65,
-      ease: 'steps(24)',
+    // Phase 1: Horizontal scanline wipe - each row draws across from left to right, staggered from top to bottom
+    masterTl.to(rowProxies, {
+      w: 24,
+      duration: 0.14,
+      stagger: 0.022,
+      ease: 'power1.out',
       onUpdate: () => {
-        clipRect.setAttribute('height', String(scanProxy.h));
+        for (let i = 0; i < rowProxies.length; i++) {
+          rowProxies[i].rect.setAttribute('width', String(rowProxies[i].w));
+        }
+        logoColorGroup.setAttribute('transform', restingTransform);
+        logoOuterSilhouette.setAttribute('transform', restingTransform);
       },
+    });
+
+    // Ensure all rows are completely unmasked at 24 before pausing
+    masterTl.add(() => {
+      for (let i = 0; i < clipRows.length; i++) {
+        clipRows[i].setAttribute('width', '24');
+      }
     });
 
     // Phase 2: Brief pause to admire the built pixel avatar
@@ -168,9 +179,17 @@ export class AlejostIntro extends LitElement {
     return html`
       <svg id="page-intro" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Pixel row-by-row clipPath in local 24x24 coordinate space -->
+          <!-- Pixel row-by-row clipPath with 24 individual scanline strips -->
           <clipPath id="pixel-clip" clipPathUnits="userSpaceOnUse">
-            <rect id="pixel-clip-rect" x="0" y="0" width="24" height="0"></rect>
+            ${Array.from({ length: TOTAL_ROWS }, (_, row) => html`
+              <rect
+                class="pixel-clip-row"
+                x="0"
+                y="${row}"
+                width="0"
+                height="1.05"
+              ></rect>
+            `)}
           </clipPath>
 
           <!-- Fullscreen mask hole through which the underlying website is revealed -->
