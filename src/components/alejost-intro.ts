@@ -66,9 +66,9 @@ export class AlejostIntro extends LitElement {
     const maskHole = this.renderRoot.querySelector('#mask-hole') as SVGPathElement | null;
     const logoColorGroup = this.renderRoot.querySelector('#intro-logo-color-group') as SVGGElement | null;
     const logoOuterSilhouette = this.renderRoot.querySelector('#intro-logo-silhouette') as SVGPathElement | null;
-    const pixelRows = Array.from(this.renderRoot.querySelectorAll('.pixel-row')) as SVGRectElement[];
+    const clipRect = this.renderRoot.querySelector('#pixel-clip-rect') as SVGRectElement | null;
 
-    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette) {
+    if (!svgEl || !bgRect || !maskCover || !maskHole || !logoColorGroup || !logoOuterSilhouette || !clipRect) {
       this.finish();
       return;
     }
@@ -93,6 +93,7 @@ export class AlejostIntro extends LitElement {
     logoOuterSilhouette.setAttribute('transform', restingTransform);
 
     const proxyUp = { s: restingScale };
+    const scanProxy = { h: 0 };
 
     // Master Timeline
     const masterTl = gsap.timeline({
@@ -102,11 +103,14 @@ export class AlejostIntro extends LitElement {
     });
 
     // Phase 1: Pixel row-by-row reveal from top to bottom (retro scanline / raster build)
-    masterTl.to(pixelRows, {
-      opacity: 1,
-      duration: 0.04,
-      stagger: 0.024,
-      ease: 'steps(1)',
+    // 24 discrete rows revealed one by one
+    masterTl.to(scanProxy, {
+      h: 24,
+      duration: 0.65,
+      ease: 'steps(24)',
+      onUpdate: () => {
+        clipRect.setAttribute('height', String(scanProxy.h));
+      },
     });
 
     // Phase 2: Brief pause to admire the built pixel avatar
@@ -161,28 +165,13 @@ export class AlejostIntro extends LitElement {
   }
 
   render() {
-    // 24 rows in 24x24 coordinate box, 1 unit per row
-    const rows = Array.from({ length: TOTAL_ROWS }, (_, i) => i);
-
     return html`
       <svg id="page-intro" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Pixel row-by-row reveal mask for the avatar -->
-          <mask id="pixel-reveal-mask">
-            ${rows.map(
-              (row) => html`
-                <rect
-                  class="pixel-row"
-                  x="0"
-                  y="${row}"
-                  width="24"
-                  height="1.05"
-                  fill="white"
-                  opacity="0"
-                ></rect>
-              `
-            )}
-          </mask>
+          <!-- Pixel row-by-row clipPath in local 24x24 coordinate space -->
+          <clipPath id="pixel-clip" clipPathUnits="userSpaceOnUse">
+            <rect id="pixel-clip-rect" x="0" y="0" width="24" height="0"></rect>
+          </clipPath>
 
           <!-- Fullscreen mask hole through which the underlying website is revealed -->
           <mask id="intro-mask" maskUnits="userSpaceOnUse">
@@ -194,17 +183,18 @@ export class AlejostIntro extends LitElement {
         <!-- Solid background with mask hole through which the underlying website is revealed -->
         <rect id="intro-bg" width="100%" height="100%" mask="url(#intro-mask)"></rect>
 
+        <!-- Wrapper group with clip-path applied in 24x24 coordinate space before transforms -->
         <!-- Base silhouette sitting over hole before zoom -->
         <path
           id="intro-logo-silhouette"
           fill="#f0b003"
           d="${LOGO_OUTER_PATH}"
           opacity="1"
-          mask="url(#pixel-reveal-mask)"
+          clip-path="url(#pixel-clip)"
         ></path>
 
-        <!-- Full color pixel avatar logo, revealed row by row by #pixel-reveal-mask -->
-        <g id="intro-logo-color-group" opacity="1" mask="url(#pixel-reveal-mask)">
+        <!-- Full color pixel avatar logo, revealed row by row by #pixel-clip -->
+        <g id="intro-logo-color-group" opacity="1" clip-path="url(#pixel-clip)">
           <!-- Hair (#f0b003) -->
           <path fill="#f0b003" d="${LOGO_HAIR_PATH}"></path>
           <!-- Face (#fec38f) -->
