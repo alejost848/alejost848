@@ -10,6 +10,7 @@ import './components/alejost-progress.js';
 import './components/alejost-notifications.js';
 import './components/alejost-toast.js';
 import './components/alejost-theme-toggle.js';
+import './components/alejost-intro.js';
 import type { ThemeMode } from './components/alejost-theme-toggle.js';
 
 
@@ -243,6 +244,7 @@ export class PortfolioApp extends LitElement {
   @state() private videoDuration = 100;
   @state() private accentColor = '#333333';
   @state() private visitedPages = new Set<string>();
+  @state() private showIntro = true;
 
   get isSingleView(): boolean {
     return this.page === 'work' || this.page === 'tutorial';
@@ -625,6 +627,13 @@ export class PortfolioApp extends LitElement {
       </div>
 
       <alejost-toast></alejost-toast>
+
+      ${this.showIntro
+        ? html`<alejost-intro
+            .theme="${this.theme}"
+            @intro-complete="${() => (this.showIntro = false)}"
+          ></alejost-intro>`
+        : ''}
     `;
   }
 }
