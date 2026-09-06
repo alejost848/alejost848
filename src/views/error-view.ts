@@ -8,14 +8,16 @@ export class ErrorView extends LitElement {
     sharedStyles,
     css`
       :host {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         position: relative;
-        min-height: 70vh;
+        min-height: calc(100vh - 220px);
       }
 
       .circle {
         position: absolute;
-        animation: circles_animation 3s ease-in-out infinite alternate;
+        animation: circles_animation 3.5s ease-in-out infinite alternate;
         animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
         opacity: 0.2;
         background-color: var(--chip-background-color);
@@ -23,24 +25,23 @@ export class ErrorView extends LitElement {
       }
 
       #circles_container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
         overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 0;
-        min-height: 500px;
+        pointer-events: none;
       }
 
-      #small { animation-delay: 0s; width: 300px; height: 300px; }
-      #medium { animation-delay: 0.3s; width: 600px; height: 600px; }
-      #large { animation-delay: 0.6s; width: 900px; height: 900px; }
-      #xlarge { animation-delay: 0.9s; width: 1200px; height: 1200px; }
-      #xxlarge { animation-delay: 1.2s; width: 1500px; height: 1500px; }
+      #small { animation-delay: 0s; width: 400px; height: 400px; }
+      #medium { animation-delay: 0.3s; width: 800px; height: 800px; }
+      #large { animation-delay: 0.6s; width: 1200px; height: 1200px; }
+      #xlarge { animation-delay: 0.9s; width: 1700px; height: 1700px; }
+      #xxlarge { animation-delay: 1.2s; width: 2300px; height: 2300px; }
 
       #text_container {
         position: relative;
@@ -49,9 +50,9 @@ export class ErrorView extends LitElement {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 500px;
         text-align: center;
         color: var(--chip-color);
+        padding: 40px 16px;
       }
 
       #large_number {
