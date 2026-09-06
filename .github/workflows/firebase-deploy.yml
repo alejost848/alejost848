@@ -32,5 +32,5 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ALEJOST848_AFEA9 }}
 
-      - name: Deploy to Firebase
-        run: npx firebase-tools deploy --non-interactive
+      - name: Deploy to Firebase Hosting
+        run: npx firebase-tools deploy --only hosting --non-interactive
