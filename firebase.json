@@ -2,9 +2,7 @@
   "database": {
     "rules": "database.rules.json"
   },
-  "functions": {
-    "runtime": "nodejs24"
-  },
+  "functions": {},
   "hosting": {
     "public": "dist",
     "redirects": [
@@ -19,21 +17,46 @@
         "type": 301
       }
     ],
-    "rewrites": [{
+    "rewrites": [
+      {
         "source": "/submitForm",
-        "function": "handleFormSubmit"
+        "function": { "functionId": "handleFormSubmit", "region": "us-central1" }
       },
       {
-        "source": "**/!(*.*)",
-        "function": "host"
+        "source": "/work/**",
+        "function": { "functionId": "host", "region": "us-central1" }
+      },
+      {
+        "source": "/tutorial/**",
+        "function": { "functionId": "host", "region": "us-central1" }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ],
-    "headers": [{
-      "source": "**/*.@(jpg|jpeg|gif|png)",
-      "headers": [{
-        "key": "Cache-Control",
-        "value": "max-age=86400"
-      }]
-    }]
+    "headers": [
+      {
+        "source": "/assets/**",
+        "headers": [{
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|webp|avif|svg|ico)",
+        "headers": [{
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }]
+      },
+      {
+        "source": "/@(sw.js|registerSW.js|manifest.webmanifest)",
+        "headers": [{
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }]
+      }
+    ]
   }
 }

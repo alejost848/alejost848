@@ -16,6 +16,7 @@
     <meta name="theme-color" content="#191919" />
 
     <!-- iOS and PWA Meta -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Alejandro Sanclemente" />
@@ -48,13 +49,31 @@
 
     <link rel="canonical" href="https://alejo.st/" />
 
+    <!-- Resource Preconnects -->
+    <link rel="preconnect" href="https://i.ytimg.com" />
+    <link rel="preconnect" href="https://alejost848-afea9.firebaseio.com" />
+    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+
     <!-- Google Fonts: Google Sans Flex -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex&display=swap"
+    />
+    <link
       href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <!-- Global Styles -->
     <style>

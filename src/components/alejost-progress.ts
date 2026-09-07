@@ -56,14 +56,18 @@ export class AlejostProgress extends LitElement {
   @property({ type: Number }) value = 0;
   @property({ type: Number }) max = 100;
   @property({ type: Boolean, reflect: true }) indeterminate = false;
-  @property({ type: Boolean, reflect: true }) resetting = false;
+
+  // Plain private flag — not reactive, toggled via toggleAttribute to avoid
+  // scheduling a second render cycle inside updated() (Lit change-in-update warning).
+  private _resetting = false;
 
   updated(changed: Map<string, unknown>) {
     if (changed.has('value')) {
-      const wasReset = this.value === 0;
-      // Toggle the resetting attribute so the CSS transition is suppressed on snap-to-zero
-      if (wasReset !== this.resetting) {
-        this.resetting = wasReset;
+      const shouldReset = this.value === 0;
+      if (shouldReset !== this._resetting) {
+        this._resetting = shouldReset;
+        // Imperatively toggle the attribute so CSS picks it up without a new render
+        this.toggleAttribute('resetting', shouldReset);
       }
     }
   }

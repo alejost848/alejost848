@@ -107,6 +107,7 @@ export class TutorialView extends LitElement {
 
   @property({ type: String }) series = '';
   @property({ type: String }) slug = '';
+  @property({ type: Boolean, reflect: true }) active = false;
 
   @state() private tutorial: any = null;
   @state() private loading = true;
@@ -121,6 +122,9 @@ export class TutorialView extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    const yt = this.renderRoot?.querySelector('#video') as any;
+    yt?.pause?.();
+
     const savedTheme = localStorage.getItem('alejo_theme');
     const isLight = savedTheme ? savedTheme === 'light' : !window.matchMedia('(prefers-color-scheme: dark)').matches;
     const defaultColor = isLight ? '#f5f5f5' : '#191919';
@@ -131,6 +135,26 @@ export class TutorialView extends LitElement {
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has('series') || changedProperties.has('slug')) {
       this.loadTutorial();
+    }
+    if (changedProperties.has('active')) {
+      if (this.active) {
+        if (this.tutorial) {
+          this.applyTutorialData(this.tutorial);
+          if (this.videoCurrentTime > 0) {
+            window.dispatchEvent(
+              new CustomEvent('video-progress', {
+                detail: {
+                  currentTime: this.videoCurrentTime,
+                  duration: this.videoDuration,
+                },
+              })
+            );
+          }
+        }
+      } else {
+        const yt = this.renderRoot?.querySelector('#video') as any;
+        yt?.pause?.();
+      }
     }
   }
 

@@ -9,7 +9,8 @@ firebase.initializeApp({
   databaseURL: 'https://alejost848-afea9.firebaseio.com',
   projectId: 'alejost848-afea9',
   storageBucket: 'alejost848-afea9.appspot.com',
-  messagingSenderId: '776617594441'
+  messagingSenderId: '776617594441',
+  appId: '1:776617594441:web:ddce73736bc8b1b09e7998',
 });
 
 const messaging = firebase.messaging();

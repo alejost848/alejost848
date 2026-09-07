@@ -12,14 +12,6 @@ import {
   update,
   DataSnapshot,
 } from 'firebase/database';
-import {
-  getMessaging,
-  getToken,
-  onMessage,
-  isSupported,
-  Messaging,
-} from 'firebase/messaging';
-export { isSupported };
 
 const firebaseConfig = {
   apiKey: 'AIzaSyClG-y7seb17rhGIa3hN4QCLn_8Ren4SRw',
@@ -28,6 +20,7 @@ const firebaseConfig = {
   projectId: 'alejost848-afea9',
   storageBucket: 'alejost848-afea9.appspot.com',
   messagingSenderId: '776617594441',
+  appId: '1:776617594441:web:ddce73736bc8b1b09e7998',
 };
 
 // Initialize Firebase App singleton
@@ -35,13 +28,32 @@ export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getA
 export const auth = getAuth(app);
 export const db = getDatabase(app);
 
-// Messaging singleton promise
-let messagingInstance: Messaging | null = null;
-export async function getMessagingService(): Promise<Messaging | null> {
+// Dynamic lazy-loaded messaging singleton
+let messagingInstance: any = null;
+
+export async function isSupported(): Promise<boolean> {
+  if (
+    typeof window === 'undefined' ||
+    !('Notification' in window) ||
+    !('serviceWorker' in navigator) ||
+    !('PushManager' in window)
+  ) {
+    return false;
+  }
+  try {
+    const { isSupported: fbIsSupported } = await import('firebase/messaging');
+    return await fbIsSupported();
+  } catch {
+    return false;
+  }
+}
+
+export async function getMessagingService(): Promise<any> {
   if (typeof window === 'undefined') return null;
   const supported = await isSupported();
   if (!supported) return null;
   if (!messagingInstance) {
+    const { getMessaging } = await import('firebase/messaging');
     messagingInstance = getMessaging(app);
   }
   return messagingInstance;
@@ -147,6 +159,7 @@ export async function requestFcmToken(): Promise<string | null> {
       swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     }
 
+    const { getToken } = await import('firebase/messaging');
     const token = await getToken(messaging, {
       serviceWorkerRegistration: swRegistration,
     });
@@ -159,11 +172,14 @@ export async function requestFcmToken(): Promise<string | null> {
 
 export function onForegroundMessage(callback: (payload: any) => void): () => void {
   let unsubscribe: (() => void) | null = null;
-  getMessagingService().then((messaging) => {
-    if (messaging) {
-      unsubscribe = onMessage(messaging, callback);
-    }
-  });
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    getMessagingService().then(async (messaging) => {
+      if (messaging) {
+        const { onMessage } = await import('firebase/messaging');
+        unsubscribe = onMessage(messaging, callback);
+      }
+    });
+  }
   return () => {
     if (unsubscribe) unsubscribe();
   };

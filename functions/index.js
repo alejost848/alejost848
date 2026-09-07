@@ -1,4 +1,6 @@
-const functions = require('firebase-functions/v1');
+const { onValueCreated, onValueWritten } = require('firebase-functions/v2/database');
+const { onRequest } = require('firebase-functions/v2/https');
+const { onObjectDeleted } = require('firebase-functions/v2/storage');
 const slugify = require('slugify');
 const admin = require('firebase-admin');
 
@@ -8,7 +10,6 @@ const path = require('path');
 const os = require('os');
 const { promisify } = require('util');
 const execFile = promisify(require('child_process').execFile);
-const cors = require('cors')({ origin: true });
 const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
 
@@ -18,35 +19,26 @@ const gcs = new Storage();
 
 admin.initializeApp();
 
-const config = typeof functions.config === 'function' ? functions.config() : {};
-const gmailEmail = (config.gmail && config.gmail.email) || process.env.GMAIL_EMAIL || '';
-const gmailPassword = (config.gmail && config.gmail.password) || process.env.GMAIL_PASSWORD || '';
-const mailTransport = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: gmailEmail,
-    pass: gmailPassword
-  }
-});
+const DB_INSTANCE = 'alejost848-afea9';
 
-exports.addTutorial = functions.database
-  .ref('/tutorials/{seriesName}/videos/{tutorialKey}')
-  .onCreate((snap, context) => {
-    let tutorialInfo = snap.val();
+exports.addTutorial = onValueCreated(
+  { ref: '/tutorials/{seriesName}/videos/{tutorialKey}', instance: DB_INSTANCE },
+  (event) => {
+    let tutorialInfo = event.data.val();
     let titleAndEpisode = tutorialInfo.title;
 
     tutorialInfo.title = titleAndEpisode.split(" | ")[0];
     tutorialInfo.episodeNumber = ('0' + titleAndEpisode.split("#")[1]).slice(-2);
     tutorialInfo.slug = slugify(tutorialInfo.episodeNumber + "-" + tutorialInfo.title, {lower: true});
     tutorialInfo.shortDescription = tutorialInfo.description.split(".")[0] + ".";
-    tutorialInfo.seriesSlug = context.params.seriesName;
+    tutorialInfo.seriesSlug = event.params.seriesName;
 
     //Update the information of the new tutorial in /tutorials
-    return snap.ref.update(tutorialInfo)
+    return event.data.ref.update(tutorialInfo)
     .then(() => {
       console.log(`Tutorial "${tutorialInfo.title}" was created`);
       //After that, it takes the oldest tutorial in home/latestTutorials and replaces it with the new one
-      const root = snap.ref.root;
+      const root = event.data.ref.root;
       return root.child('home/latestTutorials')
         .orderByChild("publishedDate")
         .limitToFirst(1)
@@ -75,15 +67,16 @@ exports.addTutorial = functions.database
         console.log(`Notification added for "${tutorialInfo.title}".`);
       });
     });
-  });
+  }
+);
 
-exports.addWork = functions.database
-  .ref('/works/{workSlug}')
-  .onWrite((change, context) => {
-    const workSlug = context.params.workSlug;
+exports.addWork = onValueWritten(
+  { ref: '/works/{workSlug}', instance: DB_INSTANCE },
+  (event) => {
+    const workSlug = event.params.workSlug;
 
     // On delete
-    if (!change.after.exists()) {
+    if (!event.data.after.exists()) {
       // Remove contents of storage folder to save space
       const bucket = gcs.bucket("alejost848-afea9.appspot.com");
       return bucket.deleteFiles({ prefix: `works/${workSlug}` })
@@ -97,9 +90,9 @@ exports.addWork = functions.database
     }
 
     // On create
-    if (!change.before.exists()) {
+    if (!event.data.before.exists()) {
       //Add new stuff from the paper-chips to the database for autocompleteSuggestions
-      const work = change.after.val();
+      const work = event.data.after.val();
       const autocompletePromise = admin.database().ref('dashboard/autocompleteSuggestions').update(getUpdatedObject(work));
       //Add 1 to workCount
       const workCountPromise = admin.database().ref('dashboard/overview/workCount').transaction(number => {
@@ -125,9 +118,9 @@ exports.addWork = functions.database
     }
 
     //On edit
-    if (change.before.exists()) {
+    if (event.data.before.exists()) {
       //Add new stuff from the paper-chips to the database for autocompleteSuggestions
-      const work = change.after.val();
+      const work = event.data.after.val();
       const autocompletePromise = admin.database().ref('dashboard/autocompleteSuggestions').update(getUpdatedObject(work));
 
       // Compress cover and generate thumbnail
@@ -137,7 +130,8 @@ exports.addWork = functions.database
         console.log(`"${workSlug}" is ready to see.`);
       });
     }
-  });
+  }
+);
 
 function handleCoverImage(workSlug, work) {
   const JPEG_EXTENSION = '.jpg';
@@ -241,10 +235,10 @@ function getUpdatedObject(work) {
   return updateObject;
 }
 
-exports.sendNotification = functions.database
-  .ref('/dashboard/notifications/{key}')
-  .onCreate(async (snap, context) => {
-    const notification = snap.val();
+exports.sendNotification = onValueCreated(
+  { ref: '/dashboard/notifications/{key}', instance: DB_INSTANCE },
+  async (event) => {
+    const notification = event.data.val();
     if (!notification) return null;
 
     const message = {
@@ -272,21 +266,22 @@ exports.sendNotification = functions.database
       console.error('Error sending notification via FCM v1:', error);
       return null;
     }
-  });
+  }
+);
 
-exports.handleSubscription = functions.database
-  .ref('/users/{uid}')
-  .onWrite(async (change, context) => {
-    const uid = context.params.uid;
+exports.handleSubscription = onValueWritten(
+  { ref: '/users/{uid}', instance: DB_INSTANCE },
+  async (event) => {
+    const uid = event.params.uid;
 
     // If we are deleting the user stop doing stuff
-    if (!change.after.exists()) {
+    if (!event.data.after.exists()) {
       console.log(`User: ${uid} was removed`);
       return null;
     }
 
-    const userToken = change.after.val().token;
-    const subscribed = change.after.val().subscribed;
+    const userToken = event.data.after.val().token;
+    const subscribed = event.data.after.val().subscribed;
 
     // If token or subscribed values are not present stop
     if (!userToken || typeof subscribed !== 'boolean') {
@@ -317,104 +312,88 @@ exports.handleSubscription = functions.database
       console.error("Error managing subscription to topic 'all':", error);
     }
     return null;
-  });
+  }
+);
 
-exports.handleFormSubmit = functions.https.onRequest((req, res) => {
-  // Add CORS middleware
-  cors(req, res, async () => {
-    try {
-      const { name, email, subject, message, hp, ts, recaptcha_token } = req.body || {};
+exports.handleFormSubmit = onRequest({
+  cors: true,
+  secrets: ['GMAIL_EMAIL', 'GMAIL_PASSWORD']
+}, async (req, res) => {
+  try {
+    const { name, email, subject, message, hp, ts } = req.body || {};
 
-      // 1. Honeypot check: If the hidden honeypot field is filled, silently discard (tarpit spam bots)
-      if (hp && typeof hp === 'string' && hp.trim().length > 0) {
-        console.warn('Spam bot detected via honeypot field:', hp);
+    // 1. Honeypot check: If the hidden honeypot field is filled, silently discard (tarpit spam bots)
+    if (hp && typeof hp === 'string' && hp.trim().length > 0) {
+      console.warn('Spam bot detected via honeypot field:', hp);
+      return res.status(200).json({ success: true, message: 'sent' });
+    }
+
+    // 2. Timestamp check: Submissions within < 800ms of page render are likely automated scripts
+    if (ts && typeof ts === 'number') {
+      const timeElapsed = Date.now() - ts;
+      if (timeElapsed < 800) {
+        console.warn('Suspiciously fast submission detected (< 800ms):', timeElapsed);
         return res.status(200).json({ success: true, message: 'sent' });
       }
-
-      // 2. Timestamp check: Submissions within < 800ms of page render are likely automated scripts
-      if (ts && typeof ts === 'number') {
-        const timeElapsed = Date.now() - ts;
-        if (timeElapsed < 800) {
-          console.warn('Suspiciously fast submission detected (< 800ms):', timeElapsed);
-          return res.status(200).json({ success: true, message: 'sent' });
-        }
-      }
-
-      // 3. Validate required fields
-      if (!email || !subject || !message) {
-        return res.status(400).json({ success: false, message: 'Missing required fields' });
-      }
-
-      // 5. Basic email format check
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(String(email).trim())) {
-        return res.status(400).json({ success: false, message: 'Invalid email address' });
-      }
-
-      // 6. Read email template and dispatch email
-      const templateContent = await fs.promises.readFile(path.join(__dirname, 'email.html'), 'utf8');
-      const template = handlebars.compile(templateContent);
-      const replacements = {
-        name: name ? String(name).trim() : 'Anonymous',
-        email: String(email).trim(),
-        subject: String(subject).trim(),
-        message: String(message).trim()
-      };
-      const htmlToSend = template(replacements);
-
-      const mailOptions = {
-        from: `"${replacements.name}" <${gmailEmail}>`,
-        replyTo: replacements.email,
-        to: gmailEmail,
-        subject: `[alejo.st] ${replacements.subject}`,
-        html: htmlToSend
-      };
-
-      await mailTransport.sendMail(mailOptions);
-      console.log('Contact form email sent successfully for:', replacements.email);
-
-      return res.status(200).json({ success: true, message: 'sent' });
-    } catch (reason) {
-      console.error('Error handling form submit:', reason);
-      return res.status(500).json({ success: false, message: 'Server error sending email', error: String(reason) });
     }
-  });
+
+    // 3. Validate required fields
+    if (!email || !subject || !message) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // 4. Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(String(email).trim())) {
+      return res.status(400).json({ success: false, message: 'Invalid email address' });
+    }
+
+    // 5. Read email template and dispatch email
+    const templateContent = await fs.promises.readFile(path.join(__dirname, 'email.html'), 'utf8');
+    const template = handlebars.compile(templateContent);
+    const replacements = {
+      name: name ? String(name).trim() : 'Anonymous',
+      email: String(email).trim(),
+      subject: String(subject).trim(),
+      message: String(message).trim()
+    };
+    const htmlToSend = template(replacements);
+
+    const gmailEmail = process.env.GMAIL_EMAIL;
+    const gmailPassword = process.env.GMAIL_PASSWORD;
+
+    const mailTransport = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailEmail,
+        pass: gmailPassword
+      }
+    });
+
+    const mailOptions = {
+      from: `"${replacements.name}" <${gmailEmail}>`,
+      replyTo: replacements.email,
+      to: gmailEmail,
+      subject: `[alejo.st] ${replacements.subject}`,
+      html: htmlToSend
+    };
+
+    await mailTransport.sendMail(mailOptions);
+    console.log('Contact form email sent successfully for:', replacements.email);
+
+    return res.status(200).json({ success: true, message: 'sent' });
+  } catch (reason) {
+    console.error('Error handling form submit:', reason);
+    return res.status(500).json({ success: false, message: 'Server error sending email', error: String(reason) });
+  }
 });
 
-exports.handleImages2 = functions.storage.object().onFinalize((object, context) => {
 
-  const fileBucket = object.bucket; // The Storage bucket that contains the file.
+exports.handleImagesDeletion = onObjectDeleted((event) => {
+
+  const fileBucket = event.data.bucket; // The Storage bucket that contains the file.
   const bucket = gcs.bucket(fileBucket);
-  const filePath = object.name; // File path in the bucket.
-  const directoryName = path.dirname(filePath); // Get the directory name.
-  const fileName = path.basename(filePath); // Get the file name.
-
-  const contentType = object.contentType; // File content type.
-  const resourceState = object.resourceState; // The resourceState is 'exists' or 'not_exists' (for file/folder deletions).
-
-  // Exit if this is triggered on a file that is not an image.
-  if (!contentType.startsWith('image/')) {
-    console.log('This is not an image.');
-    return null;
-  }
-
-  // Exit if the image is not a cover.
-  if (!directoryName.endsWith('/cover')) {
-    // TODO: Do something for other images, here or in the addWork function
-    console.log('This is a normal image.');
-    return null;
-  }
-
-  // Return null for cover related stuff
-  console.log("Nothing to do here.");
-  return null;
-});
-
-exports.handleImagesDeletion = functions.storage.object().onDelete((object, context) => {
-
-  const fileBucket = object.bucket; // The Storage bucket that contains the file.
-  const bucket = gcs.bucket(fileBucket);
-  const filePath = object.name; // File path in the bucket.
+  const filePath = event.data.name; // File path in the bucket.
   const directoryName = path.dirname(filePath); // Get the directory name.
   const fileName = path.basename(filePath); // Get the file name.
 
@@ -609,7 +588,7 @@ async function getMetadataForRoute(reqPath) {
   };
 }
 
-exports.host = functions.https.onRequest(async (req, res) => {
+exports.host = onRequest(async (req, res) => {
   const baseHtml = getIndexHtmlTemplate();
 
   // Edge cache for 1 hour, browser for 5 minutes

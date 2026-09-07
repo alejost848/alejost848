@@ -3,7 +3,6 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { renderIcon } from './alejost-icons.js';
 import {
-  isSupported,
   onForegroundMessage,
   requestFcmToken,
   saveUserSubscription,
@@ -161,13 +160,26 @@ export class AlejostNotifications extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    const messagingSupported = await isSupported();
-    this.supported = messagingSupported && 'Notification' in window && 'serviceWorker' in navigator;
+    this.supported =
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      'serviceWorker' in navigator &&
+      'PushManager' in window;
 
     document.addEventListener('click', this.handleOutsideClick);
     document.addEventListener('keydown', this.handleKeyDown);
 
-    // Listen for incoming messages while user is on the site
+    // Listen for incoming messages while user is on the site if permission was already granted
+    if (this.supported && Notification.permission === 'granted') {
+      this.attachForegroundListener();
+    }
+
+    this.checkSubscriptionStatus();
+    window.addEventListener('header-popup-opened', this.handleHeaderPopupOpened as EventListener);
+  }
+
+  private attachForegroundListener() {
+    if (this.unsubscribeMessage) return;
     this.unsubscribeMessage = onForegroundMessage((payload) => {
       const notification = payload?.notification || {};
       const title = notification.title || 'New notification';
@@ -179,16 +191,17 @@ export class AlejostNotifications extends LitElement {
             text: title,
             duration: 6000,
             buttonText: clickAction ? 'Go' : undefined,
-            buttonTapHandler: clickAction ? () => { window.location.href = clickAction; } : undefined,
+            buttonTapHandler: clickAction
+              ? () => {
+                  window.location.href = clickAction;
+                }
+              : undefined,
           },
           bubbles: true,
           composed: true,
         })
       );
     });
-
-    this.checkSubscriptionStatus();
-    window.addEventListener('header-popup-opened', this.handleHeaderPopupOpened as EventListener);
   }
 
   disconnectedCallback() {
@@ -265,6 +278,7 @@ export class AlejostNotifications extends LitElement {
       const perm = await Notification.requestPermission();
       if (perm === 'granted') {
         this.subscribed = true;
+        this.attachForegroundListener();
         this.toast("You'll get occasional notifications");
 
         // Obtain FCM token and sync to Firebase Realtime Database

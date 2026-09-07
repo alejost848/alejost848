@@ -157,7 +157,8 @@ export class PortfolioApp extends LitElement {
         background-color: var(--app-accent-color);
         border-radius: 1px;
         transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                    width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    background-color 0.35s ease;
         pointer-events: none;
       }
 
@@ -279,6 +280,9 @@ export class PortfolioApp extends LitElement {
   @state() private videoDuration = 100;
   @state() private accentColor = '#333333';
   @state() private visitedPages = new Set<string>();
+  @state() private visitedWorks = new Set<string>();
+  @state() private visitedTutorials = new Map<string, { series: string; slug: string }>();
+  @state() private worksCategory = 'all';
   @state() private showIntro =
     typeof window !== 'undefined' &&
     (window.location.pathname === '/' || window.location.pathname === '');
@@ -289,6 +293,7 @@ export class PortfolioApp extends LitElement {
 
   private router!: Router;
   private indicator: HTMLElement | null = null;
+  private lastActiveTab: HTMLElement | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -360,6 +365,18 @@ export class PortfolioApp extends LitElement {
       this.page = match.page;
       this.params = match.params;
       this.visitedPages = new Set(this.visitedPages).add(match.page);
+
+      if (match.page === 'works') {
+        this.worksCategory = match.params.category || 'all';
+      } else if (match.page === 'work' && match.params.slug) {
+        this.visitedWorks = new Set(this.visitedWorks).add(match.params.slug);
+      } else if (match.page === 'tutorial' && match.params.series && match.params.slug) {
+        const key = `${match.params.series}/${match.params.slug}`;
+        const next = new Map(this.visitedTutorials);
+        next.set(key, { series: match.params.series, slug: match.params.slug });
+        this.visitedTutorials = next;
+      }
+
       this.updateTitle();
 
       // Reset video progress and accent colors when leaving single view
@@ -545,23 +562,35 @@ export class PortfolioApp extends LitElement {
     const active = nav.querySelector('.header_tab.active') as HTMLElement | null;
     if (!active) {
       this.indicator.style.width = '0px';
+      this.lastActiveTab = null;
       return;
     }
+
+    const tabChanged = this.lastActiveTab !== active;
+    const isFirstPlacement = this.lastActiveTab === null;
+    this.lastActiveTab = active;
 
     const x = active.offsetLeft;
     const w = active.offsetWidth;
 
-    if (!animate) {
-      // Suppress transition for the initial placement so it doesn't fly in on load
-      this.indicator.style.transition = 'none';
+    if (!animate || !tabChanged || isFirstPlacement) {
+      // Suppress position and width transitions when:
+      // - animate is false (initial placement, resize, font load)
+      // - active tab element has NOT changed (e.g. from tutorials page to tutorial view, or vice versa)
+      // - first placement
+      // Only the background-color transitions smoothly!
+      this.indicator.style.transition = 'background-color 0.35s ease';
       this.indicator.style.transform = `translateX(${x}px)`;
       this.indicator.style.width = `${w}px`;
-      // Force a reflow to commit the position, then restore the transition
-      this.indicator.getBoundingClientRect();
-      this.indicator.style.transition = '';
+
+      // Restore standard sliding transitions for when active tab actually changes
+      requestAnimationFrame(() => {
+        if (this.indicator) {
+          this.indicator.style.transition = '';
+        }
+      });
     } else {
-      // The element's current inline transform/width is the "from" state.
-      // Setting new values triggers the CSS transition naturally.
+      // Different tab selected: slide indicator smoothly
       this.indicator.style.transform = `translateX(${x}px)`;
       this.indicator.style.width = `${w}px`;
     }
@@ -612,7 +641,7 @@ export class PortfolioApp extends LitElement {
         <home-view ?hidden="${this.page !== 'home'}"></home-view>
 
         ${this.visitedPages.has('works') || this.page === 'works'
-          ? html`<works-view ?hidden="${this.page !== 'works'}" .category="${this.params.category || 'all'}"></works-view>`
+          ? html`<works-view ?hidden="${this.page !== 'works'}" .category="${this.worksCategory}"></works-view>`
           : ''}
 
         ${this.visitedPages.has('tutorials') || this.page === 'tutorials'
@@ -620,24 +649,32 @@ export class PortfolioApp extends LitElement {
           : ''}
 
         ${this.visitedPages.has('about') || this.page === 'about'
-          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}"></about-view>`
+          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}" .themeMode="${this.themeMode}"></about-view>`
           : ''}
 
-        ${this.page === 'work'
-          ? html`<work-view .slug="${this.params.slug || ''}"></work-view>`
-          : ''}
+        ${Array.from(this.visitedWorks).map(
+          (slug) => html`
+            <work-view
+              .slug="${slug}"
+              ?active="${this.page === 'work' && this.params.slug === slug}"
+              ?hidden="${this.page !== 'work' || this.params.slug !== slug}"
+            ></work-view>
+          `
+        )}
 
-        ${this.page === 'tutorial'
-          ? html`
-              <tutorial-view
-                .series="${this.params.series || ''}"
-                .slug="${this.params.slug || ''}"
-              ></tutorial-view>
-            `
-          : ''}
+        ${Array.from(this.visitedTutorials.values()).map(
+          (tut) => html`
+            <tutorial-view
+              .series="${tut.series}"
+              .slug="${tut.slug}"
+              ?active="${this.page === 'tutorial' && this.params.series === tut.series && this.params.slug === tut.slug}"
+              ?hidden="${this.page !== 'tutorial' || this.params.series !== tut.series || this.params.slug !== tut.slug}"
+            ></tutorial-view>
+          `
+        )}
 
-        ${this.page === 'error'
-          ? html`<error-view></error-view>`
+        ${this.visitedPages.has('error') || this.page === 'error'
+          ? html`<error-view ?hidden="${this.page !== 'error'}"></error-view>`
           : ''}
       </main>
 

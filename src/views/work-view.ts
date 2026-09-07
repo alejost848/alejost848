@@ -155,6 +155,7 @@ export class WorkView extends LitElement {
   ];
 
   @property({ type: String }) slug = '';
+  @property({ type: Boolean, reflect: true }) active = false;
   @state() private work: any = null;
   @state() private loading = true;
   @state() private videoCurrentTime = 0;
@@ -169,6 +170,10 @@ export class WorkView extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    const yts = this.renderRoot?.querySelectorAll('lite-youtube') as NodeListOf<any>;
+    yts?.forEach(yt => yt.pause?.());
+    this.lightboxOpen = false;
+
     const savedTheme = localStorage.getItem('alejo_theme');
     const isLight = savedTheme ? savedTheme === 'light' : !window.matchMedia('(prefers-color-scheme: dark)').matches;
     const defaultColor = isLight ? '#f5f5f5' : '#191919';
@@ -179,6 +184,27 @@ export class WorkView extends LitElement {
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has('slug')) {
       this.loadWork();
+    }
+    if (changedProperties.has('active')) {
+      if (this.active) {
+        if (this.work) {
+          this.applyWorkData(this.work);
+          if (this.videoCurrentTime > 0) {
+            window.dispatchEvent(
+              new CustomEvent('video-progress', {
+                detail: {
+                  currentTime: this.videoCurrentTime,
+                  duration: this.videoDuration,
+                },
+              })
+            );
+          }
+        }
+      } else {
+        const yts = this.renderRoot?.querySelectorAll('lite-youtube') as NodeListOf<any>;
+        yts?.forEach(yt => yt.pause?.());
+        this.lightboxOpen = false;
+      }
     }
   }
 

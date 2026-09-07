@@ -2,6 +2,10 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  define: {
+    // Ensure Lit (and other libraries) strip dev-mode checks in production builds
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   build: {
     target: 'es2022',
     outDir: 'dist',
@@ -10,6 +14,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'lit-vendor': ['lit', 'lit/decorators.js'],
+          'gsap-vendor': ['gsap'],
           'firebase-core': ['firebase/app', 'firebase/auth', 'firebase/database'],
           'firebase-messaging': ['firebase/messaging'],
         },
@@ -19,7 +24,14 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['images/**/*', 'favicon.ico'],
+      includeAssets: [
+        'favicon.ico',
+        'images/logo.svg',
+        'images/manifest/icon-*.png',
+      ],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,svg}'],
+      },
       manifest: {
         name: 'Alejandro Sanclemente',
         short_name: 'Alejandro',

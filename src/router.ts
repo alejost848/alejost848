@@ -15,21 +15,40 @@ export class Router {
       this.resolveCurrentRoute();
     });
 
-    // Global click listener to intercept relative links
+    // Global click listener to intercept relative links across light and Shadow DOM
     document.addEventListener('click', (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      const anchor = target?.closest('a') as HTMLAnchorElement | null;
+      // Ignore if default was already prevented or not primary left click
+      if (e.defaultPrevented || e.button !== 0) return;
+
+      // Ignore modified clicks (open in new window/tab)
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      // Find clicked anchor element across Shadow DOM boundaries
+      const path = e.composedPath();
+      let anchor: HTMLAnchorElement | null = null;
+      for (const el of path) {
+        if (el instanceof HTMLAnchorElement) {
+          anchor = el;
+          break;
+        }
+        if (el instanceof HTMLElement && el.tagName === 'A') {
+          anchor = el as HTMLAnchorElement;
+          break;
+        }
+      }
 
       if (!anchor) return;
       const href = anchor.getAttribute('href');
       const targetAttr = anchor.getAttribute('target');
 
-      // Ignore external, hash-only, mailto, or new-tab links
+      // Ignore external, hash-only, mailto, tel, or new-tab links
       if (
         !href ||
         targetAttr === '_blank' ||
-        href.startsWith('http') ||
+        href.startsWith('http:') ||
+        href.startsWith('https:') ||
         href.startsWith('mailto:') ||
+        href.startsWith('tel:') ||
         href.startsWith('//') ||
         href.startsWith('#')
       ) {
@@ -42,7 +61,9 @@ export class Router {
   }
 
   public navigate(path: string) {
-    if (window.location.pathname === path) return;
+    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+    const targetPath = path.replace(/\/$/, '') || '/';
+    if (currentPath === targetPath) return;
 
     window.history.pushState({}, '', path);
     this.resolveCurrentRoute();
