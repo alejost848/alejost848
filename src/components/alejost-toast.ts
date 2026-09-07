@@ -67,7 +67,7 @@ export class AlejostToast extends LitElement {
       @media (max-width: 600px) {
         :host {
           left: 0;
-          bottom: 56px; /* above bottom navigation */
+          bottom: calc(56px + env(safe-area-inset-bottom, 0px)); /* above bottom navigation */
           width: 100%;
         }
         .toast-container {

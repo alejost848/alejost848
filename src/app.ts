@@ -223,7 +223,8 @@ export class PortfolioApp extends LitElement {
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 56px;
+        height: calc(56px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: env(safe-area-inset-bottom, 0px);
         box-shadow: var(--shadow-elevation-8dp);
         z-index: 999;
       }
@@ -231,7 +232,7 @@ export class PortfolioApp extends LitElement {
       .bottom_nav_items {
         display: flex;
         width: 100%;
-        height: 100%;
+        height: 56px;
       }
 
       .bottom_nav_item {
@@ -265,7 +266,7 @@ export class PortfolioApp extends LitElement {
           display: block;
         }
         main {
-          padding: 16px 10px 80px 10px;
+          padding: 16px 10px calc(80px + env(safe-area-inset-bottom, 0px)) 10px;
         }
       }
     `,
