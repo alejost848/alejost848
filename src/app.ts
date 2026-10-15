@@ -181,11 +181,6 @@ export class PortfolioApp extends LitElement {
         transform: translateY(-8px);
       }
 
-      :host(.intro-pending) main {
-        opacity: 0;
-        transform: scale(0.96) translateY(12px);
-      }
-
       :host(.intro-pending) #bottom_nav {
         opacity: 0;
         transform: translateY(10px);
@@ -196,13 +191,6 @@ export class PortfolioApp extends LitElement {
         transform: translateY(0);
         transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                     transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-
-      :host(.intro-revealed) main {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-        transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.05s,
-                    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.05s;
       }
 
       :host(.intro-revealed) #bottom_nav {

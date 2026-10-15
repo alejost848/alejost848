@@ -15,7 +15,8 @@ export default defineConfig({
         manualChunks: {
           'lit-vendor': ['lit', 'lit/decorators.js'],
           'gsap-vendor': ['gsap'],
-          'firebase-core': ['firebase/app', 'firebase/auth', 'firebase/database'],
+          'firebase-core': ['firebase/app', 'firebase/auth'],
+          'firebase-db': ['firebase/database'],
           'firebase-messaging': ['firebase/messaging'],
         },
       },

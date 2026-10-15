@@ -256,7 +256,7 @@ export class AboutView extends LitElement {
               class="flat-btn"
               href="https://medium.com/@alejost848/building-my-portfolio-website-part-1-e72a39bb7b2f"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
             >
               Read more
             </a>
@@ -275,7 +275,7 @@ export class AboutView extends LitElement {
               class="flat-btn"
               href="https://docs.google.com/document/d/1AE2Rjhj611kTnwHVvazgWS0EKrr2yZHRErkT3sXqsd8/edit?usp=sharing"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
             >
               See resume
             </a>
@@ -360,7 +360,7 @@ export class AboutView extends LitElement {
           <a
             href="https://youtube.com/alejost848"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="social-icon-btn"
             title="YouTube"
           >
@@ -369,7 +369,7 @@ export class AboutView extends LitElement {
           <a
             href="https://github.com/alejost848"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="social-icon-btn"
             title="GitHub"
           >
@@ -378,7 +378,7 @@ export class AboutView extends LitElement {
           <a
             href="https://x.com/alejost848"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="social-icon-btn"
             title="X"
           >
@@ -387,7 +387,7 @@ export class AboutView extends LitElement {
           <a
             href="https://linkedin.com/in/alejost848"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="social-icon-btn"
             title="LinkedIn"
           >
@@ -396,7 +396,7 @@ export class AboutView extends LitElement {
           <a
             href="https://dribbble.com/alejost848"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="social-icon-btn"
             title="Dribbble"
           >

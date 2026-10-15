@@ -391,7 +391,7 @@ export class WorkView extends LitElement {
                     <a
                       href="${this.work.button.url}"
                       target="_blank"
-                      rel="noopener"
+                      rel="noopener noreferrer"
                       class="action-btn"
                     >
                       <span>${this.work.button.text || 'View project'}</span>

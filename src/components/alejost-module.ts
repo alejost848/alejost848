@@ -45,9 +45,7 @@ export class AlejostModule extends LitElement {
         <h2>${this.moduleTitle}</h2>
         ${this.moduleHref
           ? html`
-              <a href="${this.moduleHref}" class="link">
-                <button class="button raised">View all</button>
-              </a>
+              <a href="${this.moduleHref}" class="button raised">View all</a>
             `
           : ''}
       </div>
