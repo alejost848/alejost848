@@ -328,14 +328,18 @@ export class AlejostNotifications extends LitElement {
       </button>
 
       <div class="popup ${this.open ? 'open' : ''}" role="dialog" aria-label="Notifications settings">
-        <video
-          class="popup-video"
-          src="${videoSrc}"
-          autoplay
-          loop
-          muted
-          playsinline
-        ></video>
+        ${this.open
+          ? html`
+              <video
+                class="popup-video"
+                src="${videoSrc}"
+                autoplay
+                loop
+                muted
+                playsinline
+              ></video>
+            `
+          : ''}
 
         <div class="popup-content">
           <div class="popup-header">
