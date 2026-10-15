@@ -70,6 +70,13 @@ export class AlejostIntro extends LitElement {
       return;
     }
 
+    // Skip animation for users or bots requesting reduced motion
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.dispatchEvent(new CustomEvent('intro-reveal', { bubbles: true, composed: true }));
+      this.finish();
+      return;
+    }
+
     const W = window.innerWidth;
     const H = window.innerHeight;
 

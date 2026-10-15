@@ -65,6 +65,7 @@ export class AlejostSlider extends LitElement {
       .slide-image {
         width: 100%;
         height: 100%;
+        aspect-ratio: 16 / 9;
         object-fit: cover;
         display: block;
       }
@@ -105,6 +106,7 @@ export class AlejostSlider extends LitElement {
       }
 
       .dot {
+        position: relative;
         width: 10px;
         height: 10px;
         border-radius: 50%;
@@ -113,6 +115,17 @@ export class AlejostSlider extends LitElement {
         border: none;
         padding: 0;
         transition: background-color 0.4s ease, transform 0.2s ease;
+      }
+
+      /* Accessible 44px tap target for touch devices */
+      .dot::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 44px;
+        height: 44px;
       }
 
       .dot.active {
@@ -131,11 +144,12 @@ export class AlejostSlider extends LitElement {
       }
 
       .nav-button {
+        position: relative;
         background: rgba(0, 0, 0, 0.4);
         border: none;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -213,8 +227,13 @@ export class AlejostSlider extends LitElement {
           gap: 6px;
         }
         .nav-button {
-          width: 32px;
-          height: 32px;
+          width: 38px;
+          height: 38px;
+        }
+        .nav-button::before {
+          content: '';
+          position: absolute;
+          inset: -4px;
         }
       }
     `,
