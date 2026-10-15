@@ -3,7 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { sharedStyles } from './styles/shared-styles.js';
 import { renderIcon } from './components/alejost-icons.js';
 import { Router, RouteMatch } from './router.js';
-import { initAuth, setUserTheme } from './services/firebase.js';
+import { initAuth, setUserTheme, logPageView } from './services/firebase.js';
 import { updateSeo } from './services/seo.js';
 
 import './components/alejost-progress.js';
@@ -379,6 +379,9 @@ export class PortfolioApp extends LitElement {
       }
 
       this.updateTitle();
+
+      // Track page view in Google Analytics
+      logPageView(window.location.pathname, document.title);
 
       // Reset video progress and accent colors when leaving single view
       if (this.page !== 'work' && this.page !== 'tutorial') {

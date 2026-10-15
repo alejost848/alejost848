@@ -505,6 +505,12 @@ function injectMetaIntoHtml(html, tags) {
   }
   if (tags['og:url']) {
     metaElements.push(`<meta property="og:url" content="${escapeHtml(tags['og:url'])}" />`);
+    // Replace hardcoded canonical URL with the actual page URL
+    if (/<link\s+rel=["']canonical["'][^>]*>/i.test(modified)) {
+      modified = modified.replace(/<link\s+rel=["']canonical["'][^>]*>/gi, `<link rel="canonical" href="${escapeHtml(tags['og:url'])}" />`);
+    } else {
+      metaElements.push(`<link rel="canonical" href="${escapeHtml(tags['og:url'])}" />`);
+    }
   }
   metaElements.push(`<meta name="twitter:card" content="summary_large_image" />`);
   metaElements.push(`<meta name="twitter:site" content="@alejost848" />`);

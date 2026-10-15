@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core Views -->
   <url>
     <loc>https://alejo.st/</loc>
     <changefreq>weekly</changefreq>
@@ -17,6 +18,120 @@
   </url>
   <url>
     <loc>https://alejo.st/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Works -->
+  <url>
+    <loc>https://alejo.st/work/motion-design-reel</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/2-hearts</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/fashion-beats</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/polytipe</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/hoy-es-diseno</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/premios-diseno-y-punto-2014</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/hogar-geriatrico-anita</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/particles</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/zue-eco-chain</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/arcades-teaser</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/not-in-love</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/arcades-launch</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/krakow-travel-video</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/work/en-secreto-andres-bara</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Tutorials -->
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/01-crea-una-animacion-isometrica</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/02-tracking-facial-con-plexus</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/03-create-a-custom-logo-animation-using-shape-layers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/04-create-a-360-video-using-mettle-skybox-trapcode-mir-and-sound-keys</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/05-constrain-movement-in-isometric-2d-space</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/06-animate-shape-layers-with-this-trick</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/07-create-exploded-isometrics-with-this-script</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alejo.st/tutorial/after-effects/08-get-small-files-when-rendering</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

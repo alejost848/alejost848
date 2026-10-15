@@ -21,12 +21,46 @@ const firebaseConfig = {
   storageBucket: 'alejost848-afea9.appspot.com',
   messagingSenderId: '776617594441',
   appId: '1:776617594441:web:ddce73736bc8b1b09e7998',
+  measurementId: 'G-M52T96265D',
 };
 
 // Initialize Firebase App singleton
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 export const db = getDatabase(app);
+
+// Dynamic lazy-loaded analytics singleton
+let analyticsInstance: any = null;
+
+export async function getAnalyticsService(): Promise<any> {
+  if (typeof window === 'undefined') return null;
+  if (!analyticsInstance) {
+    try {
+      const { getAnalytics, isSupported: gaSupported } = await import('firebase/analytics');
+      if (await gaSupported()) {
+        analyticsInstance = getAnalytics(app);
+      }
+    } catch (err) {
+      console.warn('Analytics initialization failed:', err);
+    }
+  }
+  return analyticsInstance;
+}
+
+export async function logPageView(pagePath?: string, pageTitle?: string): Promise<void> {
+  try {
+    const analytics = await getAnalyticsService();
+    if (!analytics) return;
+    const { logEvent } = await import('firebase/analytics');
+    logEvent(analytics, 'page_view', {
+      page_path: pagePath || window.location.pathname,
+      page_title: pageTitle || document.title,
+      page_location: window.location.href,
+    });
+  } catch (err) {
+    console.warn('Failed to log page view:', err);
+  }
+}
 
 // Dynamic lazy-loaded messaging singleton
 let messagingInstance: any = null;
