@@ -24,13 +24,15 @@ jobs:
       - name: Build Web App & Sync Template
         run: npm run build
 
-      - name: Install Cloud Functions Dependencies
-        run: npm --prefix functions ci
+      - name: Install & Check Cloud Functions
+        run: |
+          npm --prefix functions ci
+          npm --prefix functions run check
 
       - name: Authenticate to Google Cloud / Firebase
         uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ALEJOST848_AFEA9 }}
 
-      - name: Deploy to Firebase Hosting
-        run: npx firebase-tools deploy --only hosting --non-interactive
+      - name: Deploy to Firebase (Hosting, Rules & SSR Host Function)
+        run: npx firebase-tools deploy --only hosting,database,functions:host,functions:handleFormSubmit --non-interactive

@@ -9,15 +9,15 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
           'lit-vendor': ['lit', 'lit/decorators.js'],
-          'gsap-vendor': ['gsap'],
-          'firebase-core': ['firebase/app', 'firebase/auth'],
-          'firebase-db': ['firebase/database'],
-          'firebase-messaging': ['firebase/messaging'],
+          'firebase-core': ['@firebase/app'],
+          'firebase-db': ['@firebase/database'],
+          'firebase-auth': ['@firebase/auth'],
+          'firebase-messaging': ['@firebase/messaging'],
         },
       },
     },

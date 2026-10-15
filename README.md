@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://alejo.st">
-    <img src="https://alejo.st/images/cover.png" alt="Alejandro Sanclemente Portfolio Banner" width="100%" />
+    <img src="https://alejo.st/images/cover.jpg" alt="Alejandro Sanclemente Portfolio Banner" width="100%" />
   </a>
 </p>
 
@@ -25,7 +25,7 @@ I specialize in **motion graphics, UI animation, UX design**, and the developmen
 
 - 🎬 **Creative & Animation:** After Effects, Motion Graphics, Visual Design, Storyboarding, Video Editing
 - 💻 **Frontend Engineering:** Lit 3, Web Components, TypeScript, Vite, CSS View Transitions, PWAs
-- ☁️ **Cloud & Backend:** Firebase (Hosting, Cloud Functions Node 20, Realtime DB, Cloud Storage, FCM Web Push)
+- ☁️ **Cloud & Backend:** Firebase (Hosting, Cloud Functions Node 24, Realtime DB, Cloud Storage, FCM Web Push)
 - 🚀 **Passions:** Creative coding, interactive design, the future of the open web platform, and space exploration.
 
 ---
@@ -35,13 +35,13 @@ I specialize in **motion graphics, UI animation, UX design**, and the developmen
 This repository (`alejost848/alejost848`) is the open-source codebase for my personal portfolio: **[https://alejo.st](https://alejo.st)**.
 
 ### ✨ Highlights of the Platform
-- **Ultra-Fast & Modular:** Dynamic route code-splitting via Lit loaders reduces the initial JavaScript bundle to **~43 kB**.
+- **Ultra-Fast & Modular:** Dynamic route code-splitting via Lit loaders keeps the initial JavaScript bundle lean and responsive.
 - **In-Memory DOM Cache:** Retains visited views in memory for zero-latency, instantaneous page navigation.
 - **Ambient Color Dynamics:** Single project pages dynamically tint the ambient backdrop using the project's accent color with smooth CSS gradient masks.
-- **Enhanced YouTube Player:** Embedded facade (`<lite-youtube>`) with lazy hydration, 60fps rAF progress interpolation, and desktop keyboard shortcuts (<kbd>Space</kbd>, <kbd>J</kbd>/<kbd>L</kbd>, <kbd>M</kbd>).
+- **Enhanced YouTube Player:** Embedded facade (`<lite-youtube>`) with lazy hydration, 60fps rAF progress interpolation, and desktop keyboard shortcuts (<kbd>K</kbd>, <kbd>J</kbd>/<kbd>L</kbd>, <kbd>M</kbd>).
 - **SEO & Social Sharing:** Dynamic Open Graph, Twitter cards, canonical tags, and Schema.org structured data (`Person`, `VideoObject`, `CreativeWork`) with edge CDN caching.
 - **Push Notifications:** Native FCM Web Push integration to notify subscribers whenever a new tutorial or project is published.
-- **Frictionless Contact Form:** Spam-protected using an invisible honeypot and client-side timestamp delta validation.
+- **Frictionless Contact Form:** Spam-protected using an invisible honeypot, IP rate limiting, and client-side timestamp delta validation.
 
 ---
 
@@ -49,7 +49,7 @@ This repository (`alejost848/alejost848`) is the open-source codebase for my per
 <summary><strong>💻 Developer & Local Setup Guide</strong></summary>
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 24+
 - npm 10+
 
 ### Setup & Run
@@ -83,5 +83,5 @@ git push origin main
 ---
 
 <p align="center">
-  <sub>All creative works, tutorials, and animations © Alejandro Sanclemente. Code released under the <a href="LICENSE">MIT License</a>.</sub>
+  <sub>All creative works, tutorials, and animations © Alejandro Sanclemente.</sub>
 </p>

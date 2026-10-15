@@ -4,10 +4,9 @@ import { sharedStyles } from '../styles/shared-styles.js';
 import { subscribeToPath } from '../services/firebase.js';
 import '../components/alejost-card.js';
 
-// Module-level in-memory cache so works and categories are only fetched once per session
+// Module-level in-memory cache so works and categories are preserved across navigations
 let cachedWorks: any[] | null = null;
 let cachedCategories: Record<string, string> | null = null;
-let activeSubscription = false;
 
 @customElement('works-view')
 export class WorksView extends LitElement {
@@ -47,7 +46,7 @@ export class WorksView extends LitElement {
       }
 
       .category-chip:hover {
-        background-color: rgba(255, 255, 255, 0.12);
+        background-color: var(--chip-hover-background-color, rgba(128, 128, 128, 0.16));
       }
 
       .category-chip.active {
@@ -81,38 +80,21 @@ export class WorksView extends LitElement {
   @state() private works: any[] = cachedWorks || [];
   @state() private categories: Record<string, string> = cachedCategories || {};
   @state() private loading = !cachedWorks;
+  private unsubscribes: Array<() => void> = [];
 
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener('popstate', this.handlePopState);
     this.subscribeData();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener('popstate', this.handlePopState);
-  }
-
-  private handlePopState = () => {
-    const match = window.location.pathname.match(/^\/works(?:\/([^/]+))?$/);
-    if (match) {
-      this.category = match[1] || 'all';
-    }
-  };
-
-  private selectCategory(e: MouseEvent, cat: string) {
-    e.preventDefault();
-    if (this.category === cat) return;
-    this.category = cat;
-    const path = cat === 'all' ? '/works' : `/works/${cat}`;
-    window.history.pushState({}, '', path);
+    this.unsubscribes.forEach((unsub) => unsub());
+    this.unsubscribes = [];
   }
 
   private subscribeData() {
-    if (activeSubscription) return;
-    activeSubscription = true;
-
-    subscribeToPath(
+    const unsubCategories = subscribeToPath(
       '/dashboard/autocompleteSuggestions/categories',
       (data) => {
         if (data) {
@@ -121,8 +103,9 @@ export class WorksView extends LitElement {
         }
       }
     );
+    this.unsubscribes.push(unsubCategories);
 
-    subscribeToPath('/works', (data) => {
+    const unsubWorks = subscribeToPath('/works', (data) => {
       this.loading = false;
       if (data) {
         const list = Object.entries(data).map(([key, val]: [string, any]) => ({
@@ -134,6 +117,7 @@ export class WorksView extends LitElement {
         this.works = list;
       }
     });
+    this.unsubscribes.push(unsubWorks);
   }
 
   render() {
@@ -154,7 +138,6 @@ export class WorksView extends LitElement {
               <a
                 class="category-chip ${selectedCat === 'all' ? 'active' : ''}"
                 href="/works"
-                @click="${(e: MouseEvent) => this.selectCategory(e, 'all')}"
               >
                 All
               </a>
@@ -163,7 +146,6 @@ export class WorksView extends LitElement {
                   <a
                     class="category-chip ${selectedCat === key ? 'active' : ''}"
                     href="/works/${key}"
-                    @click="${(e: MouseEvent) => this.selectCategory(e, key)}"
                   >
                     ${text}
                   </a>

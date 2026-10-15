@@ -45,6 +45,8 @@ export function renderIcon(name: string, size = 24, className = '') {
       viewBox="0 0 24 24"
       width="${size}"
       height="${size}"
+      aria-hidden="true"
+      focusable="false"
       style="display: inline-block; vertical-align: middle; fill: currentColor;"
     >
       ${content}

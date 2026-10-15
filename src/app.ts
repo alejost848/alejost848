@@ -10,7 +10,6 @@ import './components/alejost-progress.js';
 import './components/alejost-notifications.js';
 import './components/alejost-toast.js';
 import './components/alejost-theme-toggle.js';
-import './components/alejost-intro.js';
 import type { ThemeMode } from './components/alejost-theme-toggle.js';
 
 
@@ -287,9 +286,10 @@ export class PortfolioApp extends LitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    // Set intro-pending class on host during initial intro splash
+    // Set intro-pending class on host during initial intro splash and lazy-load intro component
     if (this.showIntro) {
       this.classList.add('intro-pending');
+      import('./components/alejost-intro.js');
     }
 
     // Initialize theme mode: Dark by default, or restore saved preference
@@ -427,18 +427,19 @@ export class PortfolioApp extends LitElement {
             '--app-background-color': '#f2f2f2',
             '--card-bg-color': '#ffffff',
             '--card-image-bg-color': '#eeeeee',
-            '--card-title-color': '#444444',
-            '--card-description-color': '#888888',
+            '--card-title-color': '#333333',
+            '--card-description-color': '#666666',
             '--card-date-color': '#606060',
-            '--page-title-color': '#555555',
-            '--module-title-color': '#666666',
-            '--header-color': '#555555',
+            '--page-title-color': '#444444',
+            '--module-title-color': '#555555',
+            '--header-color': '#444444',
             '--bottom-nav-bg-color': '#ffffff',
-            '--bottom-nav-item-color': '#777777',
+            '--bottom-nav-item-color': '#666666',
             '--chip-background-color': 'rgba(0, 0, 0, 0.07)',
-            '--chip-color': 'rgba(0, 0, 0, 0.6)',
-            '--form-border-color': 'rgba(0, 0, 0, 0.2)',
-            '--form-border-focus-color': 'rgba(0, 0, 0, 0.5)',
+            '--chip-hover-background-color': 'rgba(0, 0, 0, 0.14)',
+            '--chip-color': 'rgba(0, 0, 0, 0.7)',
+            '--form-border-color': 'rgba(0, 0, 0, 0.25)',
+            '--form-border-focus-color': 'rgba(0, 0, 0, 0.55)',
           }
         : {
             '--app-background-color': '#191919',
@@ -446,14 +447,15 @@ export class PortfolioApp extends LitElement {
             '--card-image-bg-color': '#1e1e1e',
             '--card-title-color': '#f4f4f4',
             '--card-description-color': '#aaaaaa',
-            '--card-date-color': '#606060',
+            '--card-date-color': '#909090',
             '--page-title-color': '#ffffff',
             '--module-title-color': '#eeeeee',
             '--header-color': '#ffffff',
             '--bottom-nav-bg-color': '#212121',
             '--bottom-nav-item-color': '#999999',
-            '--chip-background-color': 'rgba(255, 255, 255, 0.05)',
-            '--chip-color': 'rgba(255, 255, 255, 0.8)',
+            '--chip-background-color': 'rgba(255, 255, 255, 0.06)',
+            '--chip-hover-background-color': 'rgba(255, 255, 255, 0.14)',
+            '--chip-color': 'rgba(255, 255, 255, 0.85)',
             '--form-border-color': 'rgba(255, 255, 255, 0.2)',
             '--form-border-focus-color': 'rgba(255, 255, 255, 0.6)',
           };
@@ -487,13 +489,15 @@ export class PortfolioApp extends LitElement {
           }
         });
         break;
-      case 'works':
+      case 'works': {
+        const catPath = this.worksCategory && this.worksCategory !== 'all' ? `/works/${this.worksCategory}` : '/works';
         updateSeo({
           title: 'Works - Alejandro Sanclemente',
           description: 'Explore motion design, UI/UX animation, branding, and interactive projects by Alejandro Sanclemente.',
-          url: `${window.location.origin}/works`,
+          url: `${window.location.origin}${catPath}`,
         });
         break;
+      }
       case 'tutorials':
         updateSeo({
           title: 'Tutorials - Alejandro Sanclemente',
@@ -641,7 +645,7 @@ export class PortfolioApp extends LitElement {
           : ''}
 
         ${this.visitedPages.has('about') || this.page === 'about'
-          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}" .themeMode="${this.themeMode}"></about-view>`
+          ? html`<about-view ?hidden="${this.page !== 'about'}" .theme="${this.theme}"></about-view>`
           : ''}
 
         ${Array.from(this.visitedWorks).map(

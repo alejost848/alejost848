@@ -1,6 +1,5 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { gsap } from 'gsap';
 
 // SVG Path definitions for Alejandro's logo
 // Pure exterior contour of the avatar (without internal eye cutouts)
@@ -29,6 +28,19 @@ function getTransform(scale: number, W: number, H: number): string {
   return `translate(${tx} ${ty}) scale(${scale})`;
 }
 
+// Easing functions matching GSAP power2.out, expo.in, power2.in
+function easeOutQuad(t: number): number {
+  return 1 - (1 - t) * (1 - t);
+}
+
+function easeInExpo(t: number): number {
+  return t === 0 ? 0 : Math.pow(2, 10 * (t - 1));
+}
+
+function easeInQuad(t: number): number {
+  return t * t;
+}
+
 @customElement('alejost-intro')
 export class AlejostIntro extends LitElement {
   static styles = css`
@@ -53,9 +65,18 @@ export class AlejostIntro extends LitElement {
   `;
 
   @property({ type: String }) theme = 'dark';
+  private rafId: number | null = null;
 
   firstUpdated() {
     this.runIntroAnimation();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   private runIntroAnimation() {
@@ -86,83 +107,81 @@ export class AlejostIntro extends LitElement {
     const bgColor = this.theme === 'light' ? '#e5e5e5' : '#111111';
     bgRect.setAttribute('fill', bgColor);
 
-    // Initial scale calculation
     const restingScale = DISPLAY_SIZE / LOGO_BOX_SIZE;
-    // Subtle initial scale-down factor (starts 18% larger and settles to resting size)
     const startScale = restingScale * 1.18;
-    // Massive diagonal coverage so the expanding mask hole completely clears all screen edges
     const endScale = (Math.hypot(W, H) / LOGO_BOX_SIZE) * 7.5;
 
     const startTransform = getTransform(startScale, W, H);
     maskHole.setAttribute('transform', startTransform);
     logoColorGroup.setAttribute('transform', startTransform);
 
-    const proxy = { s: startScale };
+    // Timeline durations in ms:
+    // Phase 1 (0 - 550ms): Scale down from startScale to restingScale (easeOutQuad)
+    // Phase 2 (550 - 800ms): Settle pause (250ms)
+    // Phase 3 (800 - 1650ms): Expand mask & logo from restingScale to endScale (easeInExpo)
+    //   Fade out logoColorGroup from 900ms to 1200ms (easeInQuad)
+    const PHASE1_END = 550;
+    const PHASE2_END = 800;
+    const FADE_START = 900;
+    const FADE_END = 1200;
+    const TOTAL_DURATION = 1650;
 
-    // Master Timeline
-    const masterTl = gsap.timeline({
-      onComplete: () => {
-        this.finish();
-      },
-    });
+    let startTime: number | null = null;
+    let revealDispatched = false;
 
-    (this as any).introTl = masterTl;
+    const tick = (now: number) => {
+      if (startTime === null) startTime = now;
+      const elapsed = now - startTime;
 
-    // Phase 1: Subtle initial scale-down to center
-    masterTl.to(proxy, {
-      s: restingScale,
-      duration: 0.55,
-      ease: 'power2.out',
-      onUpdate: () => {
-        const t = getTransform(proxy.s, W, H);
-        maskHole.setAttribute('transform', t);
-        logoColorGroup.setAttribute('transform', t);
-      },
-    });
-
-    // Phase 2: Brief pause to settle
-    masterTl.to({}, { duration: 0.25 });
-
-    // Phase 3: Zoom BOTH the logo graphics and the mask hole together outward,
-    // dissolving the avatar into the hole as it expands.
-    masterTl.to(
-      proxy,
-      {
-        s: endScale,
-        duration: 0.85,
-        ease: 'expo.in',
-        onStart: () => {
+      if (elapsed <= PHASE1_END) {
+        const t = easeOutQuad(Math.min(elapsed / PHASE1_END, 1));
+        const s = startScale + (restingScale - startScale) * t;
+        const transform = getTransform(s, W, H);
+        maskHole.setAttribute('transform', transform);
+        logoColorGroup.setAttribute('transform', transform);
+      } else if (elapsed <= PHASE2_END) {
+        const transform = getTransform(restingScale, W, H);
+        maskHole.setAttribute('transform', transform);
+        logoColorGroup.setAttribute('transform', transform);
+      } else {
+        if (!revealDispatched) {
+          revealDispatched = true;
           this.dispatchEvent(new CustomEvent('intro-reveal', { bubbles: true, composed: true }));
-        },
-        onUpdate: () => {
-          const t = getTransform(proxy.s, W, H);
-          maskHole.setAttribute('transform', t);
-          logoColorGroup.setAttribute('transform', t);
-        },
-      },
-      '>'
-    );
+        }
 
-    // As the zoom starts, fade out the logo into the opening hole
-    masterTl.to(
-      logoColorGroup,
-      {
-        opacity: 0,
-        duration: 0.3,
-        ease: 'power2.in',
-      },
-      '<0.1'
-    );
+        const p3Elapsed = elapsed - PHASE2_END;
+        const p3Duration = TOTAL_DURATION - PHASE2_END;
+        const t = easeInExpo(Math.min(p3Elapsed / p3Duration, 1));
+        const s = restingScale + (endScale - restingScale) * t;
+        const transform = getTransform(s, W, H);
+        maskHole.setAttribute('transform', transform);
+        logoColorGroup.setAttribute('transform', transform);
+
+        if (elapsed >= FADE_START) {
+          const fadeT = easeInQuad(Math.min((elapsed - FADE_START) / (FADE_END - FADE_START), 1));
+          logoColorGroup.setAttribute('opacity', String(Math.max(0, 1 - fadeT)));
+        }
+      }
+
+      if (elapsed < TOTAL_DURATION) {
+        this.rafId = requestAnimationFrame(tick);
+      } else {
+        this.finish();
+      }
+    };
+
+    this.rafId = requestAnimationFrame(tick);
   }
 
   private finish() {
+    this.rafId = null;
     this.dispatchEvent(new CustomEvent('intro-complete', { bubbles: true, composed: true }));
     this.remove();
   }
 
   render() {
     return html`
-      <svg id="page-intro" xmlns="http://www.w3.org/2000/svg">
+      <svg id="page-intro" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <!-- Fullscreen mask hole through which the underlying website is revealed -->
           <mask id="intro-mask" maskUnits="userSpaceOnUse">

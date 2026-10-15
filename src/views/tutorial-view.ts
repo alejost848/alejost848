@@ -162,7 +162,7 @@ export class TutorialView extends LitElement {
     if (!tutorial) return;
     const title = tutorial.title ? `${tutorial.title} - Alejandro Sanclemente` : 'Tutorial - Alejandro Sanclemente';
     const description = tutorial.shortDescription || tutorial.description || 'Motion design tutorial by Alejandro Sanclemente.';
-    const thumbnailUrl = tutorial.thumbnail || (tutorial.videoId ? `https://i.ytimg.com/vi/${tutorial.videoId}/maxresdefault.jpg` : `${window.location.origin}/images/cover.png`);
+    const thumbnailUrl = tutorial.thumbnail || (tutorial.videoId ? `https://i.ytimg.com/vi/${tutorial.videoId}/maxresdefault.jpg` : `${window.location.origin}/images/cover.jpg`);
     const videoUrl = tutorial.videoId ? `https://www.youtube.com/watch?v=${tutorial.videoId}` : `${window.location.origin}/tutorial/${this.series}/${this.slug}`;
 
     updateSeo({
@@ -268,20 +268,32 @@ export class TutorialView extends LitElement {
     }
   };
 
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   private linkify(text: string) {
     if (!text) return '';
+    // Escape raw text first to prevent DOM XSS
+    let formatted = this.escapeHtml(text);
+
     // First linkify timestamp chapters: e.g. 05:33 or 1:04:13
     const timestampRegex = /\b(\d{1,2}:\d{2}(?::\d{2})?)\b/g;
-    let formatted = text.replace(
+    formatted = formatted.replace(
       timestampRegex,
       (ts) => `<button type="button" class="timestamp-link" data-time="${ts}">${ts}</button>`
     );
 
-    // Linkify URLs
-    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    // Linkify URLs (excluding HTML entity quotes/brackets)
+    const urlRegex = /(https?:\/\/[^\s<>"'&]+(?:&amp;[^\s<>"'&]+)*)/g;
     formatted = formatted.replace(
       urlRegex,
-      (url) => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`
+      (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
     );
 
     return formatted;

@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared-styles.js';
 import { renderIcon } from './alejost-icons.js';
 import {
+  ensureAuth,
   onForegroundMessage,
   requestFcmToken,
   saveUserSubscription,
@@ -282,9 +283,13 @@ export class AlejostNotifications extends LitElement {
         this.toast("You'll get occasional notifications");
 
         // Obtain FCM token and sync to Firebase Realtime Database
-        const token = await requestFcmToken();
-        if (this.user?.uid && token) {
-          await saveUserSubscription(this.user.uid, token, true);
+        const [token, authUser] = await Promise.all([
+          requestFcmToken(),
+          this.user ? Promise.resolve(this.user) : ensureAuth(),
+        ]);
+        const uid = this.user?.uid || authUser?.uid;
+        if (uid && token) {
+          await saveUserSubscription(uid, token, true);
         }
       } else {
         this.subscribed = false;
@@ -293,8 +298,9 @@ export class AlejostNotifications extends LitElement {
     } else {
       this.subscribed = false;
       this.toast("You won't receive any new notifications");
-      if (this.user?.uid) {
-        await saveUserSubscription(this.user.uid, null, false);
+      const authUser = this.user || (await ensureAuth());
+      if (authUser?.uid) {
+        await saveUserSubscription(authUser.uid, null, false);
       }
     }
   }

@@ -245,9 +245,16 @@ export class LiteYouTube extends LitElement {
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (!this.activated || !this.isConnected) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
     if (typeof this.checkVisibility === 'function') {
       if (!this.checkVisibility()) return;
     } else if (this.offsetParent === null && this.offsetWidth === 0) {
+      return;
+    }
+
+    // Do not intercept keys when a modal/lightbox dialog is open (body overflow hidden)
+    if (document.body.style.overflow === 'hidden') {
       return;
     }
 
@@ -257,23 +264,23 @@ export class LiteYouTube extends LitElement {
       target &&
       (target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
+        target.tagName === 'BUTTON' ||
+        target.tagName === 'A' ||
+        target.getAttribute?.('role') === 'button' ||
         target.isContentEditable)
     ) {
       return;
     }
 
     switch (e.code) {
-      case 'Space':
       case 'KeyK':
         e.preventDefault();
         this.togglePlay();
         break;
-      case 'ArrowLeft':
       case 'KeyJ':
         e.preventDefault();
         this.seekBy(-5);
         break;
-      case 'ArrowRight':
       case 'KeyL':
         e.preventDefault();
         this.seekBy(5);

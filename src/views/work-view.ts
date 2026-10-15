@@ -232,7 +232,7 @@ export class WorkView extends LitElement {
     const description = data.shortDescription || data.description || 'Motion design and creative project by Alejandro Sanclemente.';
     const imageUrl = data.videoId
       ? `https://i.ytimg.com/vi/${data.videoId}/maxresdefault.jpg`
-      : data.coverImage?.downloadUrl || `${window.location.origin}/images/cover.png`;
+      : data.coverImage?.downloadUrl || `${window.location.origin}/images/cover.jpg`;
 
     updateSeo({
       title,

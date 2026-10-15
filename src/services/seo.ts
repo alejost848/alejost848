@@ -31,7 +31,7 @@ export function updateSeo(meta: SeoMetadata) {
   upsertMeta('property', 'og:url', currentUrl);
   upsertMeta('property', 'og:type', meta.type || 'website');
 
-  const imageUrl = meta.image || `${window.location.origin}/images/cover.png`;
+  const imageUrl = meta.image || `${window.location.origin}/images/cover.jpg`;
   upsertMeta('property', 'og:image', imageUrl);
 
   // 4. Twitter / X Cards

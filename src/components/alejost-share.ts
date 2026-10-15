@@ -136,14 +136,14 @@ export class AlejostShare extends LitElement {
     const url = encodeURIComponent(this.shareUrl || window.location.href);
 
     return html`
-      <button class="share-fab" @click="${this.handleShare}" title="Share this content">
+      <button class="share-fab" @click="${this.handleShare}" title="Share this content" aria-label="Share this content">
         ${renderIcon('share', 24)}
       </button>
 
-      <dialog @click="${(e: MouseEvent) => { if (e.target === e.currentTarget) this.closeDialog(); }}">
+      <dialog aria-label="Share options" @click="${(e: MouseEvent) => { if (e.target === e.currentTarget) this.closeDialog(); }}">
         <div class="dialog-header">
           <div class="dialog-title">Share</div>
-          <button class="close-btn" @click="${this.closeDialog}">
+          <button class="close-btn" @click="${this.closeDialog}" aria-label="Close share dialog">
             ${renderIcon('close', 20)}
           </button>
         </div>

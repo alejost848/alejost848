@@ -24,7 +24,19 @@
     "users": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+        ".write": "$uid === auth.uid",
+        "theme": {
+          ".validate": "newData.isString() && (newData.val() === 'dark' || newData.val() === 'light' || newData.val() === 'auto')"
+        },
+        "subscribed": {
+          ".validate": "newData.isBoolean()"
+        },
+        "token": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 512"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "works": {

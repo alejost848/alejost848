@@ -171,6 +171,7 @@ export class AlejostLightbox extends LitElement {
   @property({ type: Number }) currentIndex = 0;
 
   private touchStartX = 0;
+  private previousActiveElement: HTMLElement | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -186,9 +187,16 @@ export class AlejostLightbox extends LitElement {
   protected updated(changedProperties: PropertyValues) {
     if (changedProperties.has('open')) {
       if (this.open) {
+        this.previousActiveElement = document.activeElement as HTMLElement | null;
         document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          const closeBtn = this.renderRoot.querySelector('.action-btn') as HTMLButtonElement | null;
+          closeBtn?.focus();
+        });
       } else {
         document.body.style.overflow = '';
+        this.previousActiveElement?.focus?.();
+        this.previousActiveElement = null;
       }
     }
   }

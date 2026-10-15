@@ -66,7 +66,17 @@ export class Router {
     if (currentPath === targetPath) return;
 
     window.history.pushState({}, '', path);
-    this.resolveCurrentRoute();
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if ('startViewTransition' in document && !prefersReducedMotion) {
+      (document as any).startViewTransition(() => {
+        this.resolveCurrentRoute();
+      });
+    } else {
+      this.resolveCurrentRoute();
+    }
   }
 
   public resolveCurrentRoute() {

@@ -150,7 +150,12 @@ export class AlejostToast extends LitElement {
 
   render() {
     return html`
-      <div class="toast-container ${this.opened ? 'opened' : ''}">
+      <div
+        class="toast-container ${this.opened ? 'opened' : ''}"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <div class="toast-text">${this.text}</div>
         ${this.buttonText
           ? html`<button class="toast-action" @click="${this.handleAction}">${this.buttonText}</button>`

@@ -1,5 +1,5 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from '@firebase/app';
+import type { User } from '@firebase/auth';
 import {
   getDatabase,
   ref,
@@ -11,7 +11,7 @@ import {
   set,
   update,
   DataSnapshot,
-} from 'firebase/database';
+} from '@firebase/database';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyClG-y7seb17rhGIa3hN4QCLn_8Ren4SRw',
@@ -26,7 +26,6 @@ const firebaseConfig = {
 
 // Initialize Firebase App singleton
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const auth = getAuth(app);
 export const db = getDatabase(app);
 
 // Dynamic lazy-loaded analytics singleton
@@ -36,7 +35,7 @@ export async function getAnalyticsService(): Promise<any> {
   if (typeof window === 'undefined') return null;
   if (!analyticsInstance) {
     try {
-      const { getAnalytics, isSupported: gaSupported } = await import('firebase/analytics');
+      const { getAnalytics, isSupported: gaSupported } = await import('@firebase/analytics');
       if (await gaSupported()) {
         analyticsInstance = getAnalytics(app);
       }
@@ -51,7 +50,7 @@ export async function logPageView(pagePath?: string, pageTitle?: string): Promis
   try {
     const analytics = await getAnalyticsService();
     if (!analytics) return;
-    const { logEvent } = await import('firebase/analytics');
+    const { logEvent } = await import('@firebase/analytics');
     logEvent(analytics, 'page_view', {
       page_path: pagePath || window.location.pathname,
       page_title: pageTitle || document.title,
@@ -75,7 +74,7 @@ export async function isSupported(): Promise<boolean> {
     return false;
   }
   try {
-    const { isSupported: fbIsSupported } = await import('firebase/messaging');
+    const { isSupported: fbIsSupported } = await import('@firebase/messaging');
     return await fbIsSupported();
   } catch {
     return false;
@@ -87,23 +86,70 @@ export async function getMessagingService(): Promise<any> {
   const supported = await isSupported();
   if (!supported) return null;
   if (!messagingInstance) {
-    const { getMessaging } = await import('firebase/messaging');
+    const { getMessaging } = await import('@firebase/messaging');
     messagingInstance = getMessaging(app);
   }
   return messagingInstance;
 }
 
-// Authentication helper
+// Lazy-loaded Authentication helper — avoids loading @firebase/auth on critical path
+let authInstance: any = null;
+let currentUser: User | null = null;
+let authPromise: Promise<User | null> | null = null;
+
+export async function ensureAuth(onUserChanged?: (user: User | null) => void): Promise<User | null> {
+  if (currentUser) {
+    onUserChanged?.(currentUser);
+    return currentUser;
+  }
+  if (!authPromise) {
+    authPromise = (async () => {
+      try {
+        const { getAuth, signInAnonymously, onAuthStateChanged } = await import('@firebase/auth');
+        if (!authInstance) {
+          authInstance = getAuth(app);
+        }
+        return await new Promise<User | null>((resolve) => {
+          onAuthStateChanged(authInstance, (user) => {
+            if (user) {
+              currentUser = user;
+              onUserChanged?.(user);
+              resolve(user);
+            } else {
+              signInAnonymously(authInstance)
+                .then((cred) => {
+                  currentUser = cred.user;
+                  onUserChanged?.(cred.user);
+                  resolve(cred.user);
+                })
+                .catch((error) => {
+                  console.warn('Anonymous sign-in error:', error);
+                  resolve(null);
+                });
+            }
+          });
+        });
+      } catch (err) {
+        console.warn('Failed to initialize Firebase Auth:', err);
+        return null;
+      }
+    })();
+  } else if (onUserChanged) {
+    authPromise.then((u) => onUserChanged(u));
+  }
+  return authPromise;
+}
+
 export function initAuth(onUserChanged?: (user: User | null) => void) {
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      onUserChanged?.(user);
-    } else {
-      signInAnonymously(auth).catch((error) => {
-        console.warn('Anonymous sign-in error:', error);
-      });
-    }
-  });
+  // Defer anonymous authentication until browser is idle so it never blocks initial render
+  const run = () => {
+    ensureAuth(onUserChanged);
+  };
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(run, { timeout: 3000 });
+  } else {
+    setTimeout(run, 1500);
+  }
 }
 
 // In-memory cache for instant re-render of visited data
@@ -125,7 +171,7 @@ export function subscribeToPath<T = any>(
     callback(dataCache.get(cacheKey));
   }
 
-  let dbRef = ref(db, path);
+  const dbRef = ref(db, path);
   let q = query(dbRef);
 
   if (options?.orderByChild) {
@@ -187,13 +233,15 @@ export async function requestFcmToken(): Promise<string | null> {
     const messaging = await getMessagingService();
     if (!messaging) return null;
 
-    // Register service worker if not already registered
+    // Register FCM service worker under dedicated scope so it never conflicts with Workbox (/sw.js at '/')
     let swRegistration: ServiceWorkerRegistration | undefined;
     if ('serviceWorker' in navigator) {
-      swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+        scope: '/firebase-cloud-messaging-push-scope',
+      });
     }
 
-    const { getToken } = await import('firebase/messaging');
+    const { getToken } = await import('@firebase/messaging');
     const token = await getToken(messaging, {
       serviceWorkerRegistration: swRegistration,
     });
@@ -209,7 +257,7 @@ export function onForegroundMessage(callback: (payload: any) => void): () => voi
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
     getMessagingService().then(async (messaging) => {
       if (messaging) {
-        const { onMessage } = await import('firebase/messaging');
+        const { onMessage } = await import('@firebase/messaging');
         unsubscribe = onMessage(messaging, callback);
       }
     });
@@ -232,4 +280,3 @@ export async function saveUserSubscription(uid: string, token: string | null, su
     console.warn('Failed to save user subscription:', err);
   }
 }
-

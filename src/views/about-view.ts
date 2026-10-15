@@ -142,7 +142,7 @@ export class AboutView extends LitElement {
       }
 
       .social-icon-btn:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: var(--chip-hover-background-color, rgba(128, 128, 128, 0.15));
         transform: scale(1.1);
       }
 
@@ -303,20 +303,24 @@ export class AboutView extends LitElement {
               </div>
 
               <div class="form-group">
-                <label>Name (optional)</label>
+                <label for="contact-name">Name (optional)</label>
                 <input
+                  id="contact-name"
                   class="form-input"
                   type="text"
+                  autocomplete="name"
                   .value="${this.formName}"
                   @input="${(e: any) => (this.formName = e.target.value)}"
                 />
               </div>
 
               <div class="form-group">
-                <label>Email *</label>
+                <label for="contact-email">Email *</label>
                 <input
+                  id="contact-email"
                   class="form-input"
                   type="email"
+                  autocomplete="email"
                   required
                   .value="${this.formEmail}"
                   @input="${(e: any) => (this.formEmail = e.target.value)}"
@@ -324,8 +328,9 @@ export class AboutView extends LitElement {
               </div>
 
               <div class="form-group">
-                <label>Subject *</label>
+                <label for="contact-subject">Subject *</label>
                 <input
+                  id="contact-subject"
                   class="form-input"
                   type="text"
                   required
@@ -335,8 +340,9 @@ export class AboutView extends LitElement {
               </div>
 
               <div class="form-group">
-                <label>Message *</label>
+                <label for="contact-message">Message *</label>
                 <textarea
+                  id="contact-message"
                   class="form-input"
                   required
                   rows="4"
