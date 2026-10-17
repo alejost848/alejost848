@@ -144,6 +144,10 @@ export class WorkView extends LitElement {
         box-shadow: var(--shadow-elevation-2dp);
       }
 
+      :host([lightbox-open]) {
+        z-index: 10000;
+      }
+
       @media (max-width: 800px) {
         .information-grid {
           grid-template-columns: 1fr;
@@ -160,7 +164,7 @@ export class WorkView extends LitElement {
   @state() private loading = true;
   @state() private videoCurrentTime = 0;
   @state() private videoDuration = 100;
-  @state() private lightboxOpen = false;
+  @property({ type: Boolean, reflect: true, attribute: 'lightbox-open' }) lightboxOpen = false;
   @state() private lightboxIndex = 0;
 
   connectedCallback() {

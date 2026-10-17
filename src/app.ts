@@ -174,6 +174,10 @@ export class PortfolioApp extends LitElement {
         padding: 30px 10px 100px 10px;
       }
 
+      main:has([lightbox-open]) {
+        z-index: 10000;
+      }
+
       /* Subtle reveal animation when mask opens up */
       :host(.intro-pending) #header {
         opacity: 0;
