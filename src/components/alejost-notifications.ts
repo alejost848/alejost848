@@ -338,12 +338,17 @@ export class AlejostNotifications extends LitElement {
           ? html`
               <video
                 class="popup-video"
-                src="${videoSrc}"
                 autoplay
                 loop
                 muted
+                .muted=${true}
                 playsinline
-              ></video>
+                preload="auto"
+                width="300"
+                height="140"
+              >
+                <source src="${videoSrc}" type="video/mp4" />
+              </video>
             `
           : ''}
 
