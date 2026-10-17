@@ -101,6 +101,7 @@ export const sharedStyles = css`
     cursor: pointer;
     background-color: transparent;
     color: var(--app-accent-color);
+    text-decoration: none;
     transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
     font-family: inherit;
   }
