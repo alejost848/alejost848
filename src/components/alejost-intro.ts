@@ -28,10 +28,7 @@ function getTransform(scale: number, W: number, H: number): string {
   return `translate(${tx} ${ty}) scale(${scale})`;
 }
 
-// Easing functions matching GSAP power2.out, expo.in, power2.in
-function easeOutQuad(t: number): number {
-  return 1 - (1 - t) * (1 - t);
-}
+// Easing functions matching GSAP expo.in, power2.in
 
 function easeInExpo(t: number): number {
   return t === 0 ? 0 : Math.pow(2, 10 * (t - 1));
@@ -108,23 +105,20 @@ export class AlejostIntro extends LitElement {
     bgRect.setAttribute('fill', bgColor);
 
     const restingScale = DISPLAY_SIZE / LOGO_BOX_SIZE;
-    const startScale = restingScale * 1.18;
     const endScale = (Math.hypot(W, H) / LOGO_BOX_SIZE) * 7.5;
 
-    const startTransform = getTransform(startScale, W, H);
-    maskHole.setAttribute('transform', startTransform);
-    logoColorGroup.setAttribute('transform', startTransform);
+    const restingTransform = getTransform(restingScale, W, H);
+    maskHole.setAttribute('transform', restingTransform);
+    logoColorGroup.setAttribute('transform', restingTransform);
 
     // Timeline durations in ms:
-    // Phase 1 (0 - 550ms): Scale down from startScale to restingScale (easeOutQuad)
-    // Phase 2 (550 - 800ms): Settle pause (250ms)
-    // Phase 3 (800 - 1650ms): Expand mask & logo from restingScale to endScale (easeInExpo)
-    //   Fade out logoColorGroup from 900ms to 1200ms (easeInQuad)
-    const PHASE1_END = 550;
-    const PHASE2_END = 800;
-    const FADE_START = 900;
-    const FADE_END = 1200;
-    const TOTAL_DURATION = 1650;
+    // Phase 1 (0 - 400ms): Static pause showing the logo at resting size
+    // Phase 2 (400 - 1250ms): Expand mask & logo from restingScale to endScale (easeInExpo)
+    //   Fade out logoColorGroup from 500ms to 800ms (easeInQuad)
+    const STATIC_PAUSE = 400;
+    const FADE_START = 500;
+    const FADE_END = 800;
+    const TOTAL_DURATION = 1250;
 
     let startTime: number | null = null;
     let revealDispatched = false;
@@ -133,25 +127,19 @@ export class AlejostIntro extends LitElement {
       if (startTime === null) startTime = now;
       const elapsed = now - startTime;
 
-      if (elapsed <= PHASE1_END) {
-        const t = easeOutQuad(Math.min(elapsed / PHASE1_END, 1));
-        const s = startScale + (restingScale - startScale) * t;
-        const transform = getTransform(s, W, H);
-        maskHole.setAttribute('transform', transform);
-        logoColorGroup.setAttribute('transform', transform);
-      } else if (elapsed <= PHASE2_END) {
-        const transform = getTransform(restingScale, W, H);
-        maskHole.setAttribute('transform', transform);
-        logoColorGroup.setAttribute('transform', transform);
+      if (elapsed <= STATIC_PAUSE) {
+        // Keep static at restingScale
+        maskHole.setAttribute('transform', restingTransform);
+        logoColorGroup.setAttribute('transform', restingTransform);
       } else {
         if (!revealDispatched) {
           revealDispatched = true;
           this.dispatchEvent(new CustomEvent('intro-reveal', { bubbles: true, composed: true }));
         }
 
-        const p3Elapsed = elapsed - PHASE2_END;
-        const p3Duration = TOTAL_DURATION - PHASE2_END;
-        const t = easeInExpo(Math.min(p3Elapsed / p3Duration, 1));
+        const p2Elapsed = elapsed - STATIC_PAUSE;
+        const p2Duration = TOTAL_DURATION - STATIC_PAUSE;
+        const t = easeInExpo(Math.min(p2Elapsed / p2Duration, 1));
         const s = restingScale + (endScale - restingScale) * t;
         const transform = getTransform(s, W, H);
         maskHole.setAttribute('transform', transform);
