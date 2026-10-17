@@ -62,6 +62,24 @@ function extractDominantColor(imgSrc: string): Promise<string> {
   });
 }
 
+export function formatDuration(duration: string | number | undefined): string {
+  if (!duration) return '';
+  const str = String(duration).trim();
+  const parts = str.split(':');
+  if (parts.length === 3) {
+    const hours = parts[0];
+    const minutes = parts[1].padStart(2, '0');
+    const seconds = parts[2].padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+  if (parts.length === 2) {
+    const minutes = parts[0].padStart(2, '0');
+    const seconds = parts[1].padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }
+  return str;
+}
+
 @customElement('tutorial-view')
 export class TutorialView extends LitElement {
   static styles = [
@@ -348,7 +366,7 @@ export class TutorialView extends LitElement {
         </div>
         <div class="flex"></div>
         ${this.tutorial.duration
-          ? html`<div id="episode_duration">${this.tutorial.duration}</div>`
+          ? html`<div id="episode_duration">${formatDuration(this.tutorial.duration)}</div>`
           : ''}
       </div>
 
