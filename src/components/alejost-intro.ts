@@ -28,14 +28,13 @@ function getTransform(scale: number, W: number, H: number): string {
   return `translate(${tx} ${ty}) scale(${scale})`;
 }
 
-// Easing functions matching GSAP expo.in, power2.in
-
-function easeInExpo(t: number): number {
-  return t === 0 ? 0 : Math.pow(2, 10 * (t - 1));
+// Easing functions
+function easeInCubic(t: number): number {
+  return t * t * t;
 }
 
-function easeInQuad(t: number): number {
-  return t * t;
+function easeInQuart(t: number): number {
+  return t * t * t * t;
 }
 
 @customElement('alejost-intro')
@@ -113,12 +112,12 @@ export class AlejostIntro extends LitElement {
 
     // Timeline durations in ms:
     // Phase 1 (0 - 400ms): Static pause showing the logo at resting size
-    // Phase 2 (400 - 1250ms): Expand mask & logo from restingScale to endScale (easeInExpo)
-    //   Fade out logoColorGroup from 500ms to 800ms (easeInQuad)
+    // Phase 2 (400 - 1300ms): Smoothly expand mask & logo from restingScale to endScale (easeInQuart)
+    //   Fade out logoColorGroup from 550ms to 900ms (easeInCubic)
     const STATIC_PAUSE = 400;
-    const FADE_START = 500;
-    const FADE_END = 800;
-    const TOTAL_DURATION = 1250;
+    const FADE_START = 550;
+    const FADE_END = 900;
+    const TOTAL_DURATION = 1300;
 
     let startTime: number | null = null;
     let revealDispatched = false;
@@ -139,14 +138,14 @@ export class AlejostIntro extends LitElement {
 
         const p2Elapsed = elapsed - STATIC_PAUSE;
         const p2Duration = TOTAL_DURATION - STATIC_PAUSE;
-        const t = easeInExpo(Math.min(p2Elapsed / p2Duration, 1));
+        const t = easeInQuart(Math.min(p2Elapsed / p2Duration, 1));
         const s = restingScale + (endScale - restingScale) * t;
         const transform = getTransform(s, W, H);
         maskHole.setAttribute('transform', transform);
         logoColorGroup.setAttribute('transform', transform);
 
         if (elapsed >= FADE_START) {
-          const fadeT = easeInQuad(Math.min((elapsed - FADE_START) / (FADE_END - FADE_START), 1));
+          const fadeT = easeInCubic(Math.min((elapsed - FADE_START) / (FADE_END - FADE_START), 1));
           logoColorGroup.setAttribute('opacity', String(Math.max(0, 1 - fadeT)));
         }
       }
