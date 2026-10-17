@@ -97,15 +97,6 @@ export class AlejostShare extends LitElement {
       .social-link:hover {
         color: var(--app-accent-color);
       }
-
-      @media (max-width: 600px) {
-        .share-fab {
-          position: fixed;
-          bottom: 72px;
-          right: 16px;
-          z-index: 99;
-        }
-      }
     `,
   ];
 

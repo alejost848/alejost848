@@ -91,6 +91,10 @@ export const singleViewStyles = css`
     #card_content {
       padding: 20px;
     }
+    .share_wrapper {
+      right: 16px;
+      z-index: 10;
+    }
     #publishedDate {
       font-size: 13px;
     }
