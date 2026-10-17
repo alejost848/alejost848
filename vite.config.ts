@@ -26,12 +26,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
-        'favicon.ico',
-        'images/logo.svg',
         'images/manifest/icon-*.png',
       ],
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,svg}'],
+        globIgnores: ['**/firebase-messaging-sw.js'],
+        navigateFallbackDenylist: [/^\/assets\//, /^\/images\//, /\.[a-z0-9]+$/i],
       },
       manifest: {
         name: 'Alejandro Sanclemente',

@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const nodemailer = require('nodemailer');
-const sharp = require('sharp');
+// sharp is lazy-loaded inside handleCoverImage to avoid native binary issues during CLI analysis
 
 // Google Cloud Storage
 const { Storage } = require('@google-cloud/storage');
@@ -181,6 +181,7 @@ async function handleCoverImage(workSlug, work) {
     await bucket.file(coverPath).download({ destination: tempCoverPath });
     console.log('Image downloaded locally to', tempCoverPath);
 
+    const sharp = require('sharp');
     // Compress cover image to JPEG quality 80 and strip metadata using sharp
     await sharp(tempCoverPath).jpeg({ quality: 80 }).toFile(tempCompressedCoverPath);
     console.log('Compressed image created at', tempCompressedCoverPath);
